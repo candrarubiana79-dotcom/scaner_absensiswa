@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scanner Absensi Siswa</title>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; text-align: center; padding: 15px; margin: 0; background-color: #f2f2f7; }
+    .card { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); max-width: 400px; margin: 10px auto; }
+    #reader { width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-top: 10px; }
+    #status { margin-top: 15px; font-weight: bold; font-size: 15px; padding: 14px; border-radius: 10px; background: #e5e5ea; color: #000; word-break: break-word; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2>📷 Scanner Absensi</h2>
+    <div id="reader"></div>
+    <div id="status">Menginisialisasi kamera...</div>
+  </div>
+
+  <script>
+    const URL_WEB_APP = "https://script.google.com/macros/s/AKfycbzJkKX4071w3jd6Y-FpwIOXiAe9FwDa5wBbJEOC7Vz4DQO31pniIE3D_IgW85ESVTWZHw/exec";
+    const TOKEN_GURU = "GURU2026";
+    const KELAS_DEFAULT = "7A";
+
+    let isProcessing = false;
+
+    function onScanSuccess(decodedText) {
+      if (isProcessing) return;
+      isProcessing = true;
+
+      const statusEl = document.getElementById('status');
+      statusEl.innerText = "⏳ Memproses: " + decodedText + "...";
+      statusEl.style.background = "#ffcc00";
+      statusEl.style.color = "#000";
+
+      let targetUrl = `${URL_WEB_APP}?token=${encodeURIComponent(TOKEN_GURU)}&kelas=${encodeURIComponent(KELAS_DEFAULT)}&nama=${encodeURIComponent(decodedText)}`;
+
+      fetch(targetUrl)
+        .then(res => res.json())
+        .then(data => {
+          statusEl.innerText = data.message;
+          if (data.success) {
+            statusEl.style.background = "#34c759";
+            statusEl.style.color = "#fff";
+          } else {
+            statusEl.style.background = "#ff3b30";
+            statusEl.style.color = "#fff";
+          }
+          setTimeout(() => { isProcessing = false; }, 3000);
+        })
+        .catch(() => {
+          statusEl.innerText = "❌ Gagal terhubung ke server!";
+          statusEl.style.background = "#ff3b30";
+          statusEl.style.color = "#fff";
+          setTimeout(() => { isProcessing = false; }, 3000);
+        });
+    }
+
+    let html5QrcodeScanner = new Html5QrcodeScanner(
+      "reader", 
+      { fps: 10, qrbox: { width: 220, height: 220 }, rememberLastUsedCamera: true },
+      false
+    );
+    html5QrcodeScanner.render(onScanSuccess);
+  </script>
+</body>
+</html>
