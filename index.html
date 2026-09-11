@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Scanner Absensi Siswa</title>
+  <title>Scanner Guru Piket</title>
   <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; text-align: center; padding: 15px; margin: 0; background-color: #f2f2f7; }
@@ -17,25 +17,13 @@
 <body>
 
   <div class="card">
-    <h2>📷 Scanner Absensi</h2>
+    <h2>🔒 Scanner Guru Piket</h2>
     
-    <label for="kelas-select">Pilih Kelas yang Diabsen:</label>
+    <label for="kelas-select">Pilih Kelas Scanner:</label>
     <select id="kelas-select">
-      <option value="7A">Kelas 7A</option>
-      <option value="7B">Kelas 7B</option>
-      <option value="7C">Kelas 7C</option>
-      <option value="7D">Kelas 7D</option>
-      <option value="7E">Kelas 7E</option>
-      <option value="8A">Kelas 8A</option>
-      <option value="8B">Kelas 8B</option>
-      <option value="8C">Kelas 8C</option>
-      <option value="8D">Kelas 8D</option>
-      <option value="8E">Kelas 8E</option>
-      <option value="9A">Kelas 9A</option>
-      <option value="9B">Kelas 9B</option>
-      <option value="9C">Kelas 9C</option>
-      <option value="9D">Kelas 9D</option>
-      <option value="9E">Kelas 9E</option>
+      <option value="7A">Kelas 7A</option><option value="7B">Kelas 7B</option><option value="7C">Kelas 7C</option><option value="7D">Kelas 7D</option><option value="7E">Kelas 7E</option>
+      <option value="8A">Kelas 8A</option><option value="8B">Kelas 8B</option><option value="8C">Kelas 8C</option><option value="8D">Kelas 8D</option><option value="8E">Kelas 8E</option>
+      <option value="9A">Kelas 9A</option><option value="9B">Kelas 9B</option><option value="9C">Kelas 9C</option><option value="9D">Kelas 9D</option><option value="9E">Kelas 9E</option>
     </select>
 
     <div id="reader"></div>
@@ -43,8 +31,7 @@
   </div>
 
   <script>
-    // GANTI URL DI BAWAH INI DENGAN URL WEB APP PADA LANGKAH 2
-    const URL_WEB_APP = "PASTE_URL_GOOGLE_APPS_SCRIPT_KAMU_DI_SINI";
+    const URL_WEB_APP = "https://script.google.com/macros/s/AKfycbzq05A9BpVJFjNkHn7p2QDjbaY2ajsWjVXk5sVDkH3rStFaAC5XgEkndZSg39zOLX_2/exec";
     const TOKEN_GURU = "GURU2026";
 
     let isProcessing = false;
@@ -66,13 +53,8 @@
         .then(res => res.json())
         .then(data => {
           statusEl.innerText = data.message;
-          if (data.success) {
-            statusEl.style.background = "#34c759";
-            statusEl.style.color = "#fff";
-          } else {
-            statusEl.style.background = "#ff3b30";
-            statusEl.style.color = "#fff";
-          }
+          statusEl.style.background = data.success ? "#34c759" : "#ff3b30";
+          statusEl.style.color = "#fff";
           setTimeout(() => { isProcessing = false; }, 3000);
         })
         .catch(() => {
@@ -83,11 +65,7 @@
         });
     }
 
-    let html5QrcodeScanner = new Html5QrcodeScanner(
-      "reader", 
-      { fps: 10, qrbox: { width: 220, height: 220 }, rememberLastUsedCamera: true },
-      false
-    );
+    let html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: { width: 220, height: 220 }, rememberLastUsedCamera: true }, false);
     html5QrcodeScanner.render(onScanSuccess);
   </script>
 </body>
