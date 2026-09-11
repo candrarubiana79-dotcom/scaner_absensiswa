@@ -3,70 +3,140 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Scanner Guru Piket</title>
+  <title>Scanner Absensi Siswa</title>
   <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; text-align: center; padding: 15px; margin: 0; background-color: #f2f2f7; }
-    .card { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); max-width: 400px; margin: 10px auto; }
-    #reader { width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-top: 10px; }
-    #status { margin-top: 15px; font-weight: bold; font-size: 15px; padding: 14px; border-radius: 10px; background: #e5e5ea; color: #000; word-break: break-word; }
-    select { width: 100%; padding: 12px; font-size: 16px; font-weight: bold; border-radius: 10px; border: 1px solid #ccc; background-color: #f8f9fa; margin-bottom: 10px; }
-    label { font-size: 14px; font-weight: bold; color: #555; display: block; margin-bottom: 5px; text-align: left; }
+    body {
+      font-family: 'Segoe UI', System-UI, sans-serif;
+      background-color: #0F172A;
+      color: white;
+      margin: 0;
+      padding: 16px;
+    }
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    h2 {
+      margin-bottom: 20px;
+      color: #38BDF8;
+    }
+    #reader {
+      width: 100%;
+      background: #1E293B;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 16px;
+      border: 2px solid #334155;
+    }
+    .input-group {
+      margin-bottom: 12px;
+      text-align: left;
+    }
+    label { font-size: 13px; color: #94A3B8; font-weight: bold; }
+    input, select {
+      width: 100%;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #334155;
+      background: #1E293B;
+      color: white;
+      margin-top: 4px;
+      box-sizing: border-box;
+      font-size: 14px;
+    }
+    .status-card {
+      padding: 16px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: bold;
+      margin-top: 16px;
+      display: none;
+    }
+    .success { background: #166534; color: #DCFCE7; border: 1px solid #22C55E; }
+    .warning { background: #854D0E; color: #FEF08A; border: 1px solid #EAB308; }
+    .error { background: #991B1B; color: #FEE2E2; border: 1px solid #EF4444; }
   </style>
 </head>
 <body>
 
-  <div class="card">
-    <h2>🔒 Scanner Guru Piket</h2>
-    
-    <label for="kelas-select">Pilih Kelas Scanner:</label>
-    <select id="kelas-select">
-      <option value="7A">Kelas 7A</option><option value="7B">Kelas 7B</option><option value="7C">Kelas 7C</option><option value="7D">Kelas 7D</option><option value="7E">Kelas 7E</option>
-      <option value="8A">Kelas 8A</option><option value="8B">Kelas 8B</option><option value="8C">Kelas 8C</option><option value="8D">Kelas 8D</option><option value="8E">Kelas 8E</option>
-      <option value="9A">Kelas 9A</option><option value="9B">Kelas 9B</option><option value="9C">Kelas 9C</option><option value="9D">Kelas 9D</option><option value="9E">Kelas 9E</option>
-    </select>
+<div class="container">
+  <h2>📷 Scanner Absensi QR Code</h2>
 
-    <div id="reader"></div>
-    <div id="status">Menginisialisasi kamera...</div>
+  <div class="input-group">
+    <label>Token Guru Piket:</label>
+    <input type="password" id="token" value="GURU2026">
   </div>
 
-  <script>
-    const URL_WEB_APP = "https://script.google.com/macros/s/AKfycbzq05A9BpVJFjNkHn7p2QDjbaY2ajsWjVXk5sVDkH3rStFaAC5XgEkndZSg39zOLX_2/exec";
-    const TOKEN_GURU = "GURU2026";
+  <div class="input-group">
+    <label>Pilih Kelas Siswa:</label>
+    <select id="kelas">
+      <option value="7A">Kelas 7A</option>
+      <option value="7B">Kelas 7B</option>
+      <option value="8A">Kelas 8A</option>
+      <option value="8B">Kelas 8B</option>
+      <option value="9A">Kelas 9A</option>
+    </select>
+  </div>
 
-    let isProcessing = false;
+  <div id="reader"></div>
+  <div id="statusBox" class="status-card"></div>
+</div>
 
-    function onScanSuccess(decodedText) {
-      if (isProcessing) return;
-      isProcessing = true;
+<script>
+  // ⚠️ GANTI DENGAN URL WEB APP GOOGLE APPS SCRIPT ANDA
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx.../exec";
+  let isProcessing = false;
 
-      const selectedKelas = document.getElementById('kelas-select').value;
-      const statusEl = document.getElementById('status');
-      
-      statusEl.innerText = "⏳ Memproses (" + selectedKelas + "): " + decodedText + "...";
-      statusEl.style.background = "#ffcc00";
-      statusEl.style.color = "#000";
+  function onScanSuccess(decodedText) {
+    if (isProcessing) return;
+    isProcessing = true;
 
-      let targetUrl = `${URL_WEB_APP}?token=${encodeURIComponent(TOKEN_GURU)}&kelas=${encodeURIComponent(selectedKelas)}&nama=${encodeURIComponent(decodedText)}`;
+    const token = document.getElementById('token').value;
+    const kelas = document.getElementById('kelas').value;
 
-      fetch(targetUrl)
-        .then(res => res.json())
-        .then(data => {
-          statusEl.innerText = data.message;
-          statusEl.style.background = data.success ? "#34c759" : "#ff3b30";
-          statusEl.style.color = "#fff";
-          setTimeout(() => { isProcessing = false; }, 3000);
-        })
-        .catch(() => {
-          statusEl.innerText = "❌ Gagal terhubung ke server!";
-          statusEl.style.background = "#ff3b30";
-          statusEl.style.color = "#fff";
-          setTimeout(() => { isProcessing = false; }, 3000);
-        });
-    }
+    showStatus("⏳ Memproses data absensi...", "warning");
 
-    let html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: { width: 220, height: 220 }, rememberLastUsedCamera: true }, false);
-    html5QrcodeScanner.render(onScanSuccess);
-  </script>
+    fetch(`${SCRIPT_URL}?action=scan&token=${token}&kelas=${kelas}&nama=${encodeURIComponent(decodedText)}`)
+      .then(res => res.json())
+      .then(res => {
+        if(res.success) {
+          const isLate = res.message.includes("KESIANGAN");
+          showStatus(res.message, isLate ? "warning" : "success");
+          playBeep(isLate ? 400 : 800);
+        } else {
+          showStatus(res.message, "error");
+          playBeep(200);
+        }
+        setTimeout(() => { isProcessing = false; }, 2500);
+      })
+      .catch(err => {
+        showStatus("❌ GAGAL: Terjadi kesalahan jaringan!", "error");
+        setTimeout(() => { isProcessing = false; }, 2500);
+      });
+  }
+
+  function showStatus(text, type) {
+    const box = document.getElementById('statusBox');
+    box.className = `status-card ${type}`;
+    box.innerHTML = text;
+    box.style.display = 'block';
+  }
+
+  function playBeep(freq) {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      osc.frequency.value = freq;
+      osc.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.2);
+    } catch(e) {}
+  }
+
+  const html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
+  html5QrcodeScanner.render(onScanSuccess);
+</script>
 </body>
 </html>
