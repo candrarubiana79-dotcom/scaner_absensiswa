@@ -10,20 +10,42 @@
     .card { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); max-width: 400px; margin: 10px auto; }
     #reader { width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-top: 10px; }
     #status { margin-top: 15px; font-weight: bold; font-size: 15px; padding: 14px; border-radius: 10px; background: #e5e5ea; color: #000; word-break: break-word; }
+    select { width: 100%; padding: 12px; font-size: 16px; font-weight: bold; border-radius: 10px; border: 1px solid #ccc; background-color: #f8f9fa; margin-bottom: 10px; }
+    label { font-size: 14px; font-weight: bold; color: #555; display: block; margin-bottom: 5px; text-align: left; }
   </style>
 </head>
 <body>
 
   <div class="card">
     <h2>📷 Scanner Absensi</h2>
+    
+    <label for="kelas-select">Pilih Kelas yang Diabsen:</label>
+    <select id="kelas-select">
+      <option value="7A">Kelas 7A</option>
+      <option value="7B">Kelas 7B</option>
+      <option value="7C">Kelas 7C</option>
+      <option value="7D">Kelas 7D</option>
+      <option value="7E">Kelas 7E</option>
+      <option value="8A">Kelas 8A</option>
+      <option value="8B">Kelas 8B</option>
+      <option value="8C">Kelas 8C</option>
+      <option value="8D">Kelas 8D</option>
+      <option value="8E">Kelas 8E</option>
+      <option value="9A">Kelas 9A</option>
+      <option value="9B">Kelas 9B</option>
+      <option value="9C">Kelas 9C</option>
+      <option value="9D">Kelas 9D</option>
+      <option value="9E">Kelas 9E</option>
+    </select>
+
     <div id="reader"></div>
     <div id="status">Menginisialisasi kamera...</div>
   </div>
 
   <script>
-    const URL_WEB_APP = "https://script.google.com/macros/s/AKfycbzJkKX4071w3jd6Y-FpwIOXiAe9FwDa5wBbJEOC7Vz4DQO31pniIE3D_IgW85ESVTWZHw/exec";
+    // GANTI URL DI BAWAH INI DENGAN URL WEB APP PADA LANGKAH 2
+    const URL_WEB_APP = "PASTE_URL_GOOGLE_APPS_SCRIPT_KAMU_DI_SINI";
     const TOKEN_GURU = "GURU2026";
-    const KELAS_DEFAULT = "7A";
 
     let isProcessing = false;
 
@@ -31,12 +53,14 @@
       if (isProcessing) return;
       isProcessing = true;
 
+      const selectedKelas = document.getElementById('kelas-select').value;
       const statusEl = document.getElementById('status');
-      statusEl.innerText = "⏳ Memproses: " + decodedText + "...";
+      
+      statusEl.innerText = "⏳ Memproses (" + selectedKelas + "): " + decodedText + "...";
       statusEl.style.background = "#ffcc00";
       statusEl.style.color = "#000";
 
-      let targetUrl = `${URL_WEB_APP}?token=${encodeURIComponent(TOKEN_GURU)}&kelas=${encodeURIComponent(KELAS_DEFAULT)}&nama=${encodeURIComponent(decodedText)}`;
+      let targetUrl = `${URL_WEB_APP}?token=${encodeURIComponent(TOKEN_GURU)}&kelas=${encodeURIComponent(selectedKelas)}&nama=${encodeURIComponent(decodedText)}`;
 
       fetch(targetUrl)
         .then(res => res.json())
