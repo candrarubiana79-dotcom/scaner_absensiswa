@@ -68,10 +68,9 @@
     }
 
     function onScanSuccess(decodedText) {
+      // Jika sedang memproses data/dalam jeda, abaikan scan baru
       if (isProcessing) return;
       isProcessing = true;
-
-      document.getElementById("beepSound").play().catch(()=>{});
 
       const box = document.getElementById("statusBox");
       box.classList.remove("hidden");
@@ -90,16 +89,31 @@
         })
       })
       .then(() => {
+        // 1. BUNYI BEEP KETIKA DATA SUDAH BERHASIL TERKIRIM
+        const beep = document.getElementById("beepSound");
+        if (beep) {
+          beep.currentTime = 0; // Reset posisi audio ke awal
+          beep.play().catch(e => console.log("Audio play error:", e));
+        }
+
         box.className = "bg-emerald-900/90 border border-emerald-500 p-4 rounded-2xl text-center";
         document.getElementById("statusNama").textContent = "Absen Berhasil Dicatat!";
         document.getElementById("statusDetail").textContent = "QR Terdeteksi: " + decodedText;
-        setTimeout(() => { isProcessing = false; }, 2000);
+
+        // 2. JEDA 2 DETIK SEBELUM BISA SCAN LAGI
+        setTimeout(() => { 
+          isProcessing = false; 
+        }, 2000);
       })
       .catch(err => {
         box.className = "bg-rose-900/90 border border-rose-500 p-4 rounded-2xl text-center";
         document.getElementById("statusNama").textContent = "Gagal Mengirim!";
         document.getElementById("statusDetail").textContent = err.toString();
-        setTimeout(() => { isProcessing = false; }, 2000);
+
+        // Jeda 2 detik jika terjadi error sebelum mengizinkan scan baru
+        setTimeout(() => { 
+          isProcessing = false; 
+        }, 2000);
       });
     }
   </script>
