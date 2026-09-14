@@ -39,7 +39,6 @@
   <audio id="beepSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
 
   <script>
-    // URL WEB APP TELAH TERHUBUNG
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzq05A9BpVJFjNkHn7p2QDjbaY2ajsWjVXk5sVDkH3rStFaAC5XgEkndZSg39zOLX_2/exec";
     const TOKEN_GURU = "GURU2026";
 
@@ -68,7 +67,6 @@
     }
 
     function onScanSuccess(decodedText) {
-      // Jika sedang memproses data/dalam jeda, abaikan scan baru
       if (isProcessing) return;
       isProcessing = true;
 
@@ -76,44 +74,45 @@
       box.classList.remove("hidden");
       box.className = "bg-slate-800 p-4 rounded-2xl border border-indigo-500 text-center animate-pulse";
       document.getElementById("statusNama").textContent = "Memproses...";
-      document.getElementById("statusDetail").textContent = "Mengirim data scan ke server WIB...";
+      document.getElementById("statusDetail").textContent = "Mengirim data scan ke server...";
 
-      // Mengirimkan QR Code Siswa (Nama & NISN) + Token Pengaman GURU2026
       fetch(WEB_APP_URL, {
         method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           code: decodedText,
           token: TOKEN_GURU 
         })
       })
-      .then(() => {
-        // 1. BUNYI BEEP KETIKA DATA SUDAH BERHASIL TERKIRIM
-        const beep = document.getElementById("beepSound");
-        if (beep) {
-          beep.currentTime = 0; // Reset posisi audio ke awal
-          beep.play().catch(e => console.log("Audio play error:", e));
+      .then(res => res.json())
+      .then(res => {
+        if (res.status === "success") {
+          // Play Beep hanya jika sukses
+          const beep = document.getElementById("beepSound");
+          if (beep) {
+            beep.currentTime = 0;
+            beep.play().catch(e => console.log("Audio error:", e));
+          }
+
+          box.className = "bg-emerald-900/90 border border-emerald-500 p-4 rounded-2xl text-center";
+          document.getElementById("statusNama").textContent = res.message || "Absen Berhasil Dicatat!";
+          document.getElementById("statusDetail").textContent = "QR Terdeteksi: " + decodedText;
+        } else {
+          // Tampilkan pesan error jika duplikat / gagal dari server
+          box.className = "bg-rose-900/90 border border-rose-500 p-4 rounded-2xl text-center";
+          document.getElementById("statusNama").textContent = "Gagal Absen!";
+          document.getElementById("statusDetail").textContent = res.message || "Data ditolak oleh server.";
         }
-
-        box.className = "bg-emerald-900/90 border border-emerald-500 p-4 rounded-2xl text-center";
-        document.getElementById("statusNama").textContent = "Absen Berhasil Dicatat!";
-        document.getElementById("statusDetail").textContent = "QR Terdeteksi: " + decodedText;
-
-        // 2. JEDA 2 DETIK SEBELUM BISA SCAN LAGI
-        setTimeout(() => { 
-          isProcessing = false; 
-        }, 2000);
       })
       .catch(err => {
         box.className = "bg-rose-900/90 border border-rose-500 p-4 rounded-2xl text-center";
         document.getElementById("statusNama").textContent = "Gagal Mengirim!";
-        document.getElementById("statusDetail").textContent = err.toString();
-
-        // Jeda 2 detik jika terjadi error sebelum mengizinkan scan baru
+        document.getElementById("statusDetail").textContent = "Periksa koneksi internet Anda.";
+      })
+      .finally(() => {
+        // Jeda 2.5 detik sebelum siap menerima scan berikutnya
         setTimeout(() => { 
           isProcessing = false; 
-        }, 2000);
+        }, 2500);
       });
     }
   </script>
