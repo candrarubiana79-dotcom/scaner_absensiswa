@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Scanner HP Guru</title>
+  <title>Scanner HP Guru - SMPN 1 RANCAH</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/html5-qrcode"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -14,18 +14,18 @@
     <!-- Header -->
     <div class="text-center py-4 bg-slate-800 rounded-2xl border border-slate-700 shadow-lg">
       <h1 class="text-xl font-bold text-indigo-400"><i class="fa-solid fa-camera-retro mr-2"></i>Scanner Presensi Guru</h1>
-      <p class="text-xs text-slate-400 mt-1">Otentikasi Pengaman: <span class="text-yellow-400 font-mono font-bold">GURU2026</span></p>
+      <p class="text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider">SMPN 1 RANCAH</p>
     </div>
 
     <!-- Kamera Area -->
     <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 shadow-xl text-center">
       <div id="reader" class="overflow-hidden rounded-xl bg-black border-2 border-slate-600 mb-4"></div>
       
-      <button id="btnStart" onclick="startScanner()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-semibold transition">
-        <i class="fa-solid fa-play mr-2"></i> Buka Kamera Scanner
+      <button id="btnStart" onclick="startScanner()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-semibold transition flex items-center justify-center gap-2">
+        <i class="fa-solid fa-play"></i> Buka Kamera Scanner
       </button>
-      <button id="btnStop" onclick="stopScanner()" class="w-full bg-rose-600 hover:bg-rose-500 text-white py-3 rounded-xl font-semibold transition hidden">
-        <i class="fa-solid fa-stop mr-2"></i> Tutup Kamera
+      <button id="btnStop" onclick="stopScanner()" class="w-full bg-rose-600 hover:bg-rose-500 text-white py-3 rounded-xl font-semibold transition hidden flex items-center justify-center gap-2">
+        <i class="fa-solid fa-stop"></i> Tutup Kamera
       </button>
     </div>
 
@@ -40,7 +40,7 @@
 
   <script>
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzq05A9BpVJFjNkHn7p2QDjbaY2ajsWjVXk5sVDkH3rStFaAC5XgEkndZSg39zOLX_2/exec";
-    const TOKEN_GURU = "GURU2026";
+    const TOKEN_GURU = "GURU2026"; // Tetap tersimpan secara tersembunyi di dalam skrip
 
     let html5QrCode;
     let isProcessing = false;
@@ -86,7 +86,6 @@
       .then(res => res.json())
       .then(res => {
         if (res.status === "success") {
-          // Play Beep hanya jika sukses
           const beep = document.getElementById("beepSound");
           if (beep) {
             beep.currentTime = 0;
@@ -97,7 +96,6 @@
           document.getElementById("statusNama").textContent = res.message || "Absen Berhasil Dicatat!";
           document.getElementById("statusDetail").textContent = "QR Terdeteksi: " + decodedText;
         } else {
-          // Tampilkan pesan error jika duplikat / gagal dari server
           box.className = "bg-rose-900/90 border border-rose-500 p-4 rounded-2xl text-center";
           document.getElementById("statusNama").textContent = "Gagal Absen!";
           document.getElementById("statusDetail").textContent = res.message || "Data ditolak oleh server.";
@@ -109,7 +107,7 @@
         document.getElementById("statusDetail").textContent = "Periksa koneksi internet Anda.";
       })
       .finally(() => {
-        // Jeda 2.5 detik sebelum siap menerima scan berikutnya
+        // Jeda dipercepat menjadi 1 detik (1000 ms)
         setTimeout(() => { 
           isProcessing = false; 
         }, 1000);
