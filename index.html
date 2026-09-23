@@ -40,16 +40,27 @@
 
   <script>
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzq05A9BpVJFjNkHn7p2QDjbaY2ajsWjVXk5sVDkH3rStFaAC5XgEkndZSg39zOLX_2/exec";
-    const TOKEN_GURU = "GURU2026"; // Tetap tersimpan secara tersembunyi di dalam skrip
+    const TOKEN_GURU = "GURU2026"; 
 
     let html5QrCode;
     let isProcessing = false;
+    let masterSiswaLokal = [];
+
+    // Preload Data Master Siswa saat halaman pertama kali dibuka
+    document.addEventListener("DOMContentLoaded", () => {
+      fetch(WEB_APP_URL)
+        .then(res => res.json())
+        .then(data => {
+          masterSiswaLokal = data.master || [];
+        })
+        .catch(err => console.log("Gagal preload master data, tetap mengandalkan server."));
+    });
 
     function startScanner() {
       html5QrCode = new Html5Qrcode("reader");
       html5QrCode.start(
         { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 220, height: 220 } },
+        { fps: 15, qrbox: { width: 220, height: 220 } },
         onScanSuccess
       ).then(() => {
         document.getElementById("btnStart").classList.add("hidden");
@@ -70,12 +81,34 @@
       if (isProcessing) return;
       isProcessing = true;
 
+      // 1. BUNYI BEEP SEKETIKA (< 0.1 detik)
+      const beep = document.getElementById("beepSound");
+      if (beep) {
+        beep.currentTime = 0;
+        beep.play().catch(e => console.log("Audio error:", e));
+      }
+
+      // 2. CARI DATA SISWA LOKAL DI MEMORI HP
+      const targetCode = String(decodedText).trim().toLowerCase();
+      const siswaDitemukan = masterSiswaLokal.find(s => 
+        String(s.nisn).trim().toLowerCase() === targetCode || 
+        targetCode.includes(String(s.nama).trim().toLowerCase())
+      );
+
       const box = document.getElementById("statusBox");
       box.classList.remove("hidden");
-      box.className = "bg-slate-800 p-4 rounded-2xl border border-indigo-500 text-center animate-pulse";
-      document.getElementById("statusNama").textContent = "Memproses...";
-      document.getElementById("statusDetail").textContent = "Mengirim data scan ke server...";
 
+      if (siswaDitemukan) {
+        box.className = "bg-emerald-900/90 border border-emerald-500 p-4 rounded-2xl text-center";
+        document.getElementById("statusNama").textContent = "Mencatat: " + siswaDitemukan.nama;
+        document.getElementById("statusDetail").textContent = "Kelas " + siswaDitemukan.kelas + " • Menyimpan ke server...";
+      } else {
+        box.className = "bg-indigo-900/90 border border-indigo-500 p-4 rounded-2xl text-center animate-pulse";
+        document.getElementById("statusNama").textContent = "Memproses QR...";
+        document.getElementById("statusDetail").textContent = "Mengirim data ke server...";
+      }
+
+      // 3. PROSES PENGIRIMAN KE SERVER DI BACKGROUND
       fetch(WEB_APP_URL, {
         method: "POST",
         body: JSON.stringify({ 
@@ -86,12 +119,6 @@
       .then(res => res.json())
       .then(res => {
         if (res.status === "success") {
-          const beep = document.getElementById("beepSound");
-          if (beep) {
-            beep.currentTime = 0;
-            beep.play().catch(e => console.log("Audio error:", e));
-          }
-
           box.className = "bg-emerald-900/90 border border-emerald-500 p-4 rounded-2xl text-center";
           document.getElementById("statusNama").textContent = res.message || "Absen Berhasil Dicatat!";
           document.getElementById("statusDetail").textContent = "QR Terdeteksi: " + decodedText;
@@ -107,10 +134,10 @@
         document.getElementById("statusDetail").textContent = "Periksa koneksi internet Anda.";
       })
       .finally(() => {
-        // Jeda dipercepat menjadi 1 detik (1000 ms)
+        // Cooldown dipercepat ke 800ms
         setTimeout(() => { 
           isProcessing = false; 
-        }, 1000);
+        }, 800);
       });
     }
   </script>
