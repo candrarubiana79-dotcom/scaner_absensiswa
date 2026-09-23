@@ -11,10 +11,17 @@
 <body class="bg-slate-900 text-white min-h-screen flex flex-col justify-between p-4 font-sans">
 
   <div class="max-w-md mx-auto w-full space-y-4">
-    <!-- Header -->
+    <!-- Header + Indikator Status -->
     <div class="text-center py-4 bg-slate-800 rounded-2xl border border-slate-700 shadow-lg">
       <h1 class="text-xl font-bold text-indigo-400"><i class="fa-solid fa-camera-retro mr-2"></i>Scanner Presensi</h1>
       <p class="text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider">SMPN 1 RANCAH</p>
+      
+      <!-- Lencana Indikator -->
+      <div class="mt-2 flex justify-center">
+        <span id="dataStatus" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+          <i class="fa-solid fa-spinner fa-spin"></i> Memuat data siswa...
+        </span>
+      </div>
     </div>
 
     <!-- Kamera Area -->
@@ -46,14 +53,26 @@
     let isProcessing = false;
     let masterSiswaLokal = [];
 
-    // Preload Data Master Siswa saat halaman pertama kali dibuka
+    // Update Indikator Status & Preload Data
     document.addEventListener("DOMContentLoaded", () => {
+      const statusEl = document.getElementById("dataStatus");
+
       fetch(WEB_APP_URL)
         .then(res => res.json())
         .then(data => {
           masterSiswaLokal = data.master || [];
+          if (statusEl) {
+            statusEl.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+            statusEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> Sistem Siap (${masterSiswaLokal.length} Siswa)`;
+          }
         })
-        .catch(err => console.log("Gagal preload master data, tetap mengandalkan server."));
+        .catch(err => {
+          console.log("Gagal preload master data, tetap mengandalkan server.");
+          if (statusEl) {
+            statusEl.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20";
+            statusEl.innerHTML = `<i class="fa-solid fa-cloud"></i> Mode Online Server`;
+          }
+        });
     });
 
     function startScanner() {
@@ -134,7 +153,6 @@
         document.getElementById("statusDetail").textContent = "Periksa koneksi internet Anda.";
       })
       .finally(() => {
-        // Cooldown dipercepat ke 800ms
         setTimeout(() => { 
           isProcessing = false; 
         }, 800);
