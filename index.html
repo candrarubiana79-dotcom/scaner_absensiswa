@@ -3,55 +3,72 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Scanner HP Guru - SMPN 1 RANCAH</title>
+  <title>Scanner HP Guru - SMPN 1 RANCAH (v3.0)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/html5-qrcode"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="bg-slate-900 text-white min-h-screen flex flex-col justify-between p-4 font-sans">
+<body class="bg-slate-900 text-white h-screen overflow-hidden flex flex-col justify-between p-3 font-sans">
 
-  <div class="max-w-md mx-auto w-full space-y-4">
-    <!-- Header + Indikator Status -->
-    <div class="text-center py-4 bg-slate-800 rounded-2xl border border-slate-700 shadow-lg">
-      <h1 class="text-xl font-bold text-indigo-400"><i class="fa-solid fa-camera-retro mr-2"></i>Scanner Presensi</h1>
-      <p class="text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider">SMPN 1 RANCAH</p>
+  <div class="max-w-md mx-auto w-full flex-1 flex flex-col justify-start space-y-2.5">
+    
+    <!-- 1. HEADER + INDIKATOR STATUS -->
+    <div class="text-center py-2.5 px-3 bg-slate-800 rounded-xl border border-slate-700 shadow-md">
+      <div class="flex items-center justify-center gap-2">
+        <h1 class="text-lg font-bold text-indigo-400"><i class="fa-solid fa-camera-retro mr-1.5"></i>Scanner Presensi</h1>
+        <span class="text-[10px] font-extrabold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full">v3.0</span>
+      </div>
+      <p class="text-[10px] font-bold text-slate-400 mt-0.5 uppercase tracking-wider">SMPN 1 RANCAH</p>
       
       <!-- Lencana Indikator -->
-      <div class="mt-2 flex justify-center">
-        <span id="dataStatus" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+      <div class="mt-1.5 flex justify-center">
+        <span id="dataStatus" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
           <i class="fa-solid fa-spinner fa-spin"></i> Memuat data siswa...
         </span>
       </div>
     </div>
 
-    <!-- Kamera Area -->
-    <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 shadow-xl text-center">
-      <div id="reader" class="overflow-hidden rounded-xl bg-black border-2 border-slate-600 mb-4"></div>
+    <!-- 2. KOTAK HASIL SCAN (DIATAS KAMERA - POSISI BARU) -->
+    <div id="statusBox" class="bg-slate-800 p-3 rounded-xl border border-slate-700 hidden text-center transition-all duration-300 shadow-lg">
+      <h2 id="statusNama" class="text-base font-bold"></h2>
+      <p id="statusDetail" class="text-xs text-slate-300 mt-0.5"></p>
+    </div>
+
+    <!-- 3. AREA KAMERA SCANNER -->
+    <div class="bg-slate-800 p-3 rounded-xl border border-slate-700 shadow-xl text-center flex-1 flex flex-col justify-center min-h-0">
+      <!-- Frame Kamera yang Ringkas -->
+      <div id="reader" class="overflow-hidden rounded-lg bg-black border-2 border-slate-600 mb-2.5 max-h-[52vh] flex items-center justify-center"></div>
       
-      <button id="btnStart" onclick="startScanner()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-semibold transition flex items-center justify-center gap-2">
+      <button id="btnStart" onclick="startScanner()" class="w-full bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white py-2.5 rounded-xl font-semibold text-sm transition flex items-center justify-center gap-2 shadow-lg">
         <i class="fa-solid fa-play"></i> Buka Kamera Scanner
       </button>
-      <button id="btnStop" onclick="stopScanner()" class="w-full bg-rose-600 hover:bg-rose-500 text-white py-3 rounded-xl font-semibold transition hidden flex items-center justify-center gap-2">
+      <button id="btnStop" onclick="stopScanner()" class="w-full bg-rose-600 hover:bg-rose-500 active:scale-95 text-white py-2.5 rounded-xl font-semibold text-sm transition hidden flex items-center justify-center gap-2 shadow-lg">
         <i class="fa-solid fa-stop"></i> Tutup Kamera
       </button>
     </div>
 
-    <!-- Kotak Hasil Scan -->
-    <div id="statusBox" class="bg-slate-800 p-4 rounded-2xl border border-slate-700 hidden text-center">
-      <h2 id="statusNama" class="text-lg font-bold"></h2>
-      <p id="statusDetail" class="text-xs text-slate-300 mt-1"></p>
-    </div>
   </div>
+
+  <!-- FOOTER RINGKAS -->
+  <footer class="text-center text-[10px] text-slate-500 pt-1">
+    Presensi Digital • SMPN 1 Rancah <span class="font-bold text-slate-400">v3.0</span>
+  </footer>
 
   <audio id="beepSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
 
   <script>
+    const APP_VERSION = "v3.0";
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzq05A9BpVJFjNkHn7p2QDjbaY2ajsWjVXk5sVDkH3rStFaAC5XgEkndZSg39zOLX_2/exec";
     const TOKEN_GURU = "GURU2026"; 
 
     let html5QrCode;
     let isProcessing = false;
     let masterSiswaLokal = [];
+    
+    // VARIABEL SMART FILTER ANTI DOUBLE-SCAN
+    let lastScannedCode = "";
+    let lastScannedTime = 0;
+    let autoHideTimer = null;
 
     // Update Indikator Status & Preload Data
     document.addEventListener("DOMContentLoaded", () => {
@@ -62,14 +79,14 @@
         .then(data => {
           masterSiswaLokal = data.master || [];
           if (statusEl) {
-            statusEl.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
-            statusEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> Sistem Siap (${masterSiswaLokal.length} Siswa)`;
+            statusEl.className = "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+            statusEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> Siap (${masterSiswaLokal.length} Siswa)`;
           }
         })
         .catch(err => {
           console.log("Gagal preload master data, tetap mengandalkan server.");
           if (statusEl) {
-            statusEl.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20";
+            statusEl.className = "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20";
             statusEl.innerHTML = `<i class="fa-solid fa-cloud"></i> Mode Online Server`;
           }
         });
@@ -79,7 +96,7 @@
       html5QrCode = new Html5Qrcode("reader");
       html5QrCode.start(
         { facingMode: "environment" },
-        { fps: 15, qrbox: { width: 220, height: 220 } },
+        { fps: 15, qrbox: { width: 200, height: 200 } },
         onScanSuccess
       ).then(() => {
         document.getElementById("btnStart").classList.add("hidden");
@@ -97,18 +114,30 @@
     }
 
     function onScanSuccess(decodedText) {
+      const now = Date.now();
+      const targetCode = String(decodedText).trim().toLowerCase();
+
+      // 1. SMART FILTER: JIKA SISWA SAMA SCAN BERULANG DALAM < 3 DETIK -> ABAIKAN
+      if (targetCode === lastScannedCode && (now - lastScannedTime) < 3000) {
+        return; 
+      }
+
       if (isProcessing) return;
       isProcessing = true;
 
-      // 1. BUNYI BEEP SEKETIKA (< 0.1 detik)
+      lastScannedCode = targetCode;
+      lastScannedTime = now;
+
+      if (autoHideTimer) clearTimeout(autoHideTimer);
+
+      // 2. BUNYI BEEP SEKETIKA (< 0.1 detik)
       const beep = document.getElementById("beepSound");
       if (beep) {
         beep.currentTime = 0;
         beep.play().catch(e => console.log("Audio error:", e));
       }
 
-      // 2. CARI DATA SISWA LOKAL DI MEMORI HP
-      const targetCode = String(decodedText).trim().toLowerCase();
+      // 3. CARI DATA SISWA LOKAL DI MEMORI HP
       const siswaDitemukan = masterSiswaLokal.find(s => 
         String(s.nisn).trim().toLowerCase() === targetCode || 
         targetCode.includes(String(s.nama).trim().toLowerCase())
@@ -118,16 +147,16 @@
       box.classList.remove("hidden");
 
       if (siswaDitemukan) {
-        box.className = "bg-emerald-900/90 border border-emerald-500 p-4 rounded-2xl text-center";
+        box.className = "bg-emerald-900/90 border border-emerald-500 p-3 rounded-xl text-center shadow-lg transition-all duration-200";
         document.getElementById("statusNama").textContent = "Mencatat: " + siswaDitemukan.nama;
         document.getElementById("statusDetail").textContent = "Kelas " + siswaDitemukan.kelas + " • Menyimpan ke server...";
       } else {
-        box.className = "bg-indigo-900/90 border border-indigo-500 p-4 rounded-2xl text-center animate-pulse";
+        box.className = "bg-indigo-900/90 border border-indigo-500 p-3 rounded-xl text-center shadow-lg animate-pulse";
         document.getElementById("statusNama").textContent = "Memproses QR...";
         document.getElementById("statusDetail").textContent = "Mengirim data ke server...";
       }
 
-      // 3. PROSES PENGIRIMAN KE SERVER DI BACKGROUND
+      // 4. PROSES PENGIRIMAN KE SERVER DI BACKGROUND
       fetch(WEB_APP_URL, {
         method: "POST",
         body: JSON.stringify({ 
@@ -138,24 +167,29 @@
       .then(res => res.json())
       .then(res => {
         if (res.status === "success") {
-          box.className = "bg-emerald-900/90 border border-emerald-500 p-4 rounded-2xl text-center";
+          box.className = "bg-emerald-900/90 border border-emerald-500 p-3 rounded-xl text-center shadow-lg";
           document.getElementById("statusNama").textContent = res.message || "Absen Berhasil Dicatat!";
-          document.getElementById("statusDetail").textContent = "QR Terdeteksi: " + decodedText;
+          document.getElementById("statusDetail").textContent = "Waktu: " + (res.jam || "WIB");
         } else {
-          box.className = "bg-rose-900/90 border border-rose-500 p-4 rounded-2xl text-center";
-          document.getElementById("statusNama").textContent = "Gagal Absen!";
+          box.className = "bg-amber-900/90 border border-amber-500 p-3 rounded-xl text-center shadow-lg";
+          document.getElementById("statusNama").textContent = "Peringatan Presensi";
           document.getElementById("statusDetail").textContent = res.message || "Data ditolak oleh server.";
         }
       })
       .catch(err => {
-        box.className = "bg-rose-900/90 border border-rose-500 p-4 rounded-2xl text-center";
+        box.className = "bg-rose-900/90 border border-rose-500 p-3 rounded-xl text-center shadow-lg";
         document.getElementById("statusNama").textContent = "Gagal Mengirim!";
         document.getElementById("statusDetail").textContent = "Periksa koneksi internet Anda.";
       })
       .finally(() => {
+        // Jeda singkat 0.4 detik agar antrean siswa berikutnya tetap kilat
         setTimeout(() => { 
           isProcessing = false; 
-        }, 800);
+        }, 400);
+
+        autoHideTimer = setTimeout(() => {
+          box.classList.add("hidden");
+        }, 3500);
       });
     }
   </script>
