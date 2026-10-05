@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Scanner HP Guru - SMPN 1 RANCAH (v3.1 Offline)</title>
+  <title>Scanner HP Guru - SMPN 1 RANCAH (v3.2 Fast UI)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/html5-qrcode"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -16,7 +16,7 @@
     <div class="text-center py-2.5 px-3 bg-slate-800 rounded-xl border border-slate-700 shadow-md">
       <div class="flex items-center justify-center gap-2">
         <h1 class="text-lg font-bold text-indigo-400"><i class="fa-solid fa-camera-retro mr-1.5"></i>Scanner Presensi</h1>
-        <span class="text-[10px] font-extrabold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full">v3.1</span>
+        <span class="text-[10px] font-extrabold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full">v3.2</span>
       </div>
       <p class="text-[10px] font-bold text-slate-400 mt-0.5 uppercase tracking-wider">SMPN 1 RANCAH</p>
       
@@ -31,8 +31,8 @@
       </div>
     </div>
 
-    <!-- 2. KOTAK HASIL SCAN -->
-    <div id="statusBox" class="bg-slate-800 p-3 rounded-xl border border-slate-700 hidden text-center transition-all duration-300 shadow-lg">
+    <!-- 2. KOTAK HASIL SCAN (NOTIFIKASI INSTAN) -->
+    <div id="statusBox" class="bg-slate-800 p-3 rounded-xl border border-slate-700 hidden text-center transition-all duration-200 shadow-lg">
       <h2 id="statusNama" class="text-base font-bold"></h2>
       <p id="statusDetail" class="text-xs text-slate-300 mt-0.5"></p>
     </div>
@@ -53,13 +53,13 @@
 
   <!-- FOOTER -->
   <footer class="text-center text-[10px] text-slate-500 pt-1">
-    Presensi Digital • SMPN 1 Rancah <span class="font-bold text-slate-400">v3.1 Offline</span>
+    Presensi Digital • SMPN 1 Rancah <span class="font-bold text-slate-400">v3.2 Fast UI</span>
   </footer>
 
   <audio id="beepSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
 
   <script>
-    const APP_VERSION = "v3.1";
+    const APP_VERSION = "v3.2";
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzq05A9BpVJFjNkHn7p2QDjbaY2ajsWjVXk5sVDkH3rStFaAC5XgEkndZSg39zOLX_2/exec";
     const TOKEN_GURU = "GURU2026"; 
 
@@ -72,7 +72,7 @@
     let autoHideTimer = null;
     let isSyncing = false;
 
-    // FUNGSI ANTREAN OFFLINE (LOCALSTORAGE)
+    // ANTREAN OFFLINE (LOCALSTORAGE)
     function getOfflineQueue() {
       return JSON.parse(localStorage.getItem("presensi_offline_queue") || "[]");
     }
@@ -99,7 +99,7 @@
       const statusEl = document.getElementById("dataStatus");
       updateOfflineUI();
 
-      // Coba preload data master siswa & simpan ke Cache HP
+      // Preload data master siswa & simpan ke Cache HP
       fetch(WEB_APP_URL)
         .then(res => res.json())
         .then(data => {
@@ -112,7 +112,6 @@
           syncOfflineData();
         })
         .catch(err => {
-          // Jika offline saat aplikasi dibuka, gunakan data siswa dari Cache HP
           masterSiswaLokal = JSON.parse(localStorage.getItem("masterSiswaCache") || "[]");
           if (statusEl) {
             statusEl.className = "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20";
@@ -120,7 +119,6 @@
           }
         });
 
-      // Pemicu otomatis sinkronisasi saat internet terhubung kembali
       window.addEventListener("online", syncOfflineData);
     });
 
@@ -149,9 +147,10 @@
       const now = Date.now();
       const targetCode = String(decodedText).trim().toLowerCase();
 
-      // Anti Double-Scan dalam 3 detik
-      if (targetCode === lastScannedCode && (now - lastScannedTime) < 3000) return;
+      // Anti Double-Scan dalam 2.5 detik untuk kartu yang sama
+      if (targetCode === lastScannedCode && (now - lastScannedTime) < 2500) return;
 
+      // Kunci sementara (500ms) agar antar-scan siswa lancar & tidak tumpang tindih
       if (isProcessing) return;
       isProcessing = true;
 
@@ -160,14 +159,14 @@
 
       if (autoHideTimer) clearTimeout(autoHideTimer);
 
-      // Bunyi Beep Instant
+      // Bunyi Beep Seketika
       const beep = document.getElementById("beepSound");
       if (beep) {
         beep.currentTime = 0;
         beep.play().catch(e => console.log("Audio error:", e));
       }
 
-      // Cari Data Siswa di Memori HP
+      // 1. CARI DATA SISWA DI MEMORI HP (CEPAT & SANGAT AKURAT)
       const siswaDitemukan = masterSiswaLokal.find(s => 
         String(s.nisn).trim().toLowerCase() === targetCode || 
         targetCode.includes(String(s.nama).trim().toLowerCase())
@@ -176,10 +175,23 @@
       const namaSiswa = siswaDitemukan ? siswaDitemukan.nama : "Siswa QR: " + decodedText;
       const detailSiswa = siswaDitemukan ? ("Kelas " + siswaDitemukan.kelas) : "QR Terdeteksi";
 
+      // 2. TAMPILKAN NAMA SISWA INSTAN PADA TAMPILAN PERTAMA (0 MILIDETIK)
       const box = document.getElementById("statusBox");
+      const elNama = document.getElementById("statusNama");
+      const elDetail = document.getElementById("statusDetail");
+
+      elNama.textContent = namaSiswa;
+      elDetail.textContent = detailSiswa + " • ⚡ Mencatat...";
+      box.className = "bg-indigo-900/90 border border-indigo-500 p-3 rounded-xl text-center shadow-lg transition-all duration-150";
       box.classList.remove("hidden");
 
-      // Coba Kirim ke Server
+      // Buka kunci scanner setelah 500ms agar siswa berikutnya bisa langsung discan tanpa ketahan server
+      setTimeout(() => { isProcessing = false; }, 500);
+
+      // Catat penanda unik scan saat ini untuk mencegah balasan server lambat menimpa kartu baru
+      const currentScanCode = targetCode;
+
+      // 3. PROSES PENGIRIMAN DATA KE SERVER DI BACKGROUND (ASYNC)
       fetch(WEB_APP_URL, {
         method: "POST",
         body: JSON.stringify({ 
@@ -189,18 +201,21 @@
       })
       .then(res => res.json())
       .then(res => {
-        if (res.status === "success") {
-          box.className = "bg-emerald-900/90 border border-emerald-500 p-3 rounded-xl text-center shadow-lg";
-          document.getElementById("statusNama").textContent = res.message || ("Berhasil: " + namaSiswa);
-          document.getElementById("statusDetail").textContent = "Waktu: " + (res.jam || "WIB");
-        } else {
-          box.className = "bg-amber-900/90 border border-amber-500 p-3 rounded-xl text-center shadow-lg";
-          document.getElementById("statusNama").textContent = "Peringatan Presensi";
-          document.getElementById("statusDetail").textContent = res.message || "Data ditolak server.";
+        // HANYA UPDATE LAYAR JIKA KARTU YANG TAMPIL MASIH KARTU YANG SAMA
+        if (lastScannedCode === currentScanCode) {
+          if (res.status === "success") {
+            box.className = "bg-emerald-900/90 border border-emerald-500 p-3 rounded-xl text-center shadow-lg";
+            elNama.textContent = "✅ " + (siswaDitemukan ? siswaDitemukan.nama : res.message);
+            elDetail.textContent = detailSiswa + " • Waktu: " + (res.jam || "WIB");
+          } else {
+            box.className = "bg-amber-900/90 border border-amber-500 p-3 rounded-xl text-center shadow-lg";
+            elNama.textContent = "⚠️ " + namaSiswa;
+            elDetail.textContent = res.message || "Data ditolak server.";
+          }
         }
       })
       .catch(err => {
-        // JIKA OFFLINE / INTERNET ERROR -> SIMPAN KE ANTREAN LOCALSTORAGE
+        // JIKA OFFLINE / INTERNET SLOW -> MASUKKAN ANTREAN
         const queue = getOfflineQueue();
         const timestampLokal = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
         
@@ -212,23 +227,24 @@
         
         saveOfflineQueue(queue);
 
-        box.className = "bg-amber-900/90 border border-amber-500 p-3 rounded-xl text-center shadow-lg";
-        document.getElementById("statusNama").textContent = "Tersimpan Offline: " + namaSiswa;
-        document.getElementById("statusDetail").textContent = detailSiswa + " • Disimpan di HP (Sinyal Lemah)";
+        if (lastScannedCode === currentScanCode) {
+          box.className = "bg-amber-900/90 border border-amber-500 p-3 rounded-xl text-center shadow-lg";
+          elNama.textContent = "📦 " + namaSiswa;
+          elDetail.textContent = detailSiswa + " • Tersimpan Offline (Sinyal Lemah)";
+        }
       })
       .finally(() => {
-        setTimeout(() => { isProcessing = false; }, 400);
-
         autoHideTimer = setTimeout(() => {
-          box.classList.add("hidden");
-        }, 3500);
+          if (lastScannedCode === currentScanCode) {
+            box.classList.add("hidden");
+          }
+        }, 3000);
 
-        // Coba sinkronisasi jika ada antrean lain
         syncOfflineData();
       });
     }
 
-    // FUNGSI UNGGUK SINKRONISASI OTOMATIS DATA OFFLINE
+    // SINKRONISASI DATA OFFLINE DENGAN SERVER
     function syncOfflineData() {
       if (isSyncing) return;
       const queue = getOfflineQueue();
@@ -246,14 +262,12 @@
       })
       .then(res => res.json())
       .then(res => {
-        // Jika sukses terunggah ke Google Sheets, hapus dari antrean
         queue.shift();
         saveOfflineQueue(queue);
         isSyncing = false;
         if (queue.length > 0) syncOfflineData();
       })
       .catch(err => {
-        // Masih offline, batalkan dulu upload
         isSyncing = false;
       });
     }
