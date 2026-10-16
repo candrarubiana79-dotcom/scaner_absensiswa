@@ -2,8 +2,8 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Scanner Presensi Terpadu - SMPN 1 RANCAH (v3.6)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Scanner Presensi Terpadu - SMPN 1 RANCAH (v3.7)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/html5-qrcode"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -20,19 +20,19 @@
     }
   </style>
 </head>
-<body class="bg-slate-900 text-white h-screen overflow-hidden flex flex-col justify-between p-3 font-sans">
+<body class="bg-slate-900 text-white h-[100dvh] overflow-hidden flex flex-col justify-between p-2.5 font-sans relative">
 
-  <div class="max-w-md mx-auto w-full flex-1 flex flex-col justify-start space-y-2">
+  <div class="max-w-md mx-auto w-full flex-1 flex flex-col justify-start space-y-2 min-h-0 relative">
     
     <!-- 1. HEADER & INDIKATOR STATUS -->
-    <div class="text-center py-2 px-3 bg-slate-800 rounded-xl border border-slate-700 shadow-md">
+    <div class="text-center py-2 px-3 bg-slate-800 rounded-xl border border-slate-700 shadow-md flex-shrink-0 z-10">
       <div class="flex items-center justify-center gap-2">
         <h1 class="text-base font-bold text-indigo-400"><i class="fa-solid fa-qrcode mr-1.5"></i>Scanner Terpadu</h1>
-        <span class="text-[10px] font-extrabold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full">v3.6 Unified</span>
+        <span class="text-[10px] font-extrabold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full">v3.7 Unified</span>
       </div>
       
       <!-- TOGGLE PILIHAN MODE SCAN -->
-      <div class="grid grid-cols-3 gap-1 bg-slate-900 p-1 rounded-lg border border-slate-700 mt-2 text-[10px] font-bold">
+      <div class="grid grid-cols-3 gap-1 bg-slate-900 p-1 rounded-lg border border-slate-700 mt-1.5 text-[10px] font-bold">
         <button id="btnModeAuto" onclick="setScanMode('auto')" class="py-1.5 rounded-md transition text-slate-400 active-mode">
           ⚡ Auto Jam
         </button>
@@ -44,18 +44,24 @@
         </button>
       </div>
 
-      <!-- STATUS DATA & OFFLINE QUEUE -->
-      <div class="mt-1.5 flex flex-wrap justify-center gap-1.5">
-        <span id="dataStatus" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
-          <i class="fa-solid fa-spinner fa-spin"></i> Memuat data...
+      <!-- STATUS DATA, OFFLINE QUEUE, & JUMLAH SCAN -->
+      <div class="mt-1 flex flex-wrap justify-center items-center gap-1.5">
+        <span id="dataStatus" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+          <i class="fa-solid fa-spinner fa-spin"></i> Memuat...
         </span>
+
+        <!-- LENCANA JUMLAH TERSCAN (BISA DIKLIK) -->
+        <button onclick="openScannedModal()" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-500/40 transition cursor-pointer active:scale-95">
+          <i class="fa-solid fa-user-check text-emerald-400"></i> <span id="scannedCount">0</span> Terscan
+        </button>
+
         <span id="offlineBadge" class="hidden inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-slate-950 shadow-sm animate-pulse">
           <i class="fa-solid fa-box-archive"></i> <span id="offlineCount">0</span> Offline
         </span>
       </div>
 
       <!-- PROGRESS BAR SINKRONISASI -->
-      <div id="progressContainer" class="hidden mt-1.5 pt-1 border-t border-slate-700/50">
+      <div id="progressContainer" class="hidden mt-1 pt-1 border-t border-slate-700/50">
         <div class="flex justify-between items-center text-[9px] text-amber-400 font-semibold mb-0.5 px-1">
           <span id="progressText"><i class="fa-solid fa-cloud-arrow-up mr-1"></i> Mengirim antrean...</span>
           <span id="progressPercent">0%</span>
@@ -66,35 +72,65 @@
       </div>
     </div>
 
-    <!-- 2. POPUP HASIL SCAN -->
-    <div id="statusBox" class="bg-slate-800 p-2.5 rounded-xl border border-slate-700 hidden text-center transition-all duration-200 shadow-lg flex flex-col items-center">
+    <!-- 2. POPUP HASIL SCAN (FLOATING OVERLAY) -->
+    <div id="statusBox" class="absolute top-24 left-2 right-2 z-30 bg-slate-800/95 backdrop-blur-md p-3 rounded-xl border border-indigo-500 hidden text-center shadow-2xl flex flex-col items-center transition-all duration-200">
       <img id="statusFoto" src="https://via.placeholder.com/100?text=Foto" class="w-16 h-20 object-cover rounded-lg border-2 border-indigo-400 mb-1.5 shadow-md hidden">
       <h2 id="statusNama" class="text-sm font-bold"></h2>
       <p id="statusDetail" class="text-xs text-slate-300 mt-0.5"></p>
     </div>
 
     <!-- 3. AREA KAMERA & USB SCANNER -->
-    <div class="bg-slate-800 p-2.5 rounded-xl border border-slate-700 shadow-xl text-center flex-1 flex flex-col justify-center min-h-0 relative">
-      <input type="text" id="inputUsbScanner" class="opacity-0 absolute -z-10" autofocus>
+    <div class="bg-slate-800 p-2.5 rounded-xl border border-slate-700 shadow-xl text-center flex-1 flex flex-col justify-between min-h-0 relative overflow-hidden">
+      <input type="text" id="inputUsbScanner" inputmode="none" class="opacity-0 absolute -z-10" autofocus>
 
-      <div id="reader" class="overflow-hidden rounded-lg bg-black border-2 border-slate-600 mb-2 w-full flex items-center justify-center"></div>
+      <div id="reader" class="overflow-hidden rounded-lg bg-black border-2 border-slate-600 w-full flex-1 flex items-center justify-center min-h-0"></div>
       
-      <button id="btnStart" onclick="startScanner()" class="w-full bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white py-2 rounded-xl font-semibold text-xs transition flex items-center justify-center gap-2 shadow-lg">
-        <i class="fa-solid fa-camera"></i> Buka Kamera HP
-      </button>
-      <button id="btnStop" onclick="stopScanner()" class="w-full bg-rose-600 hover:bg-rose-500 active:scale-95 text-white py-2 rounded-xl font-semibold text-xs transition hidden flex items-center justify-center gap-2 shadow-lg">
-        <i class="fa-solid fa-stop"></i> Tutup Kamera
-      </button>
+      <div class="mt-2 flex-shrink-0">
+        <button id="btnStart" onclick="startScanner()" class="w-full bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white py-2 rounded-xl font-semibold text-xs transition flex items-center justify-center gap-2 shadow-lg">
+          <i class="fa-solid fa-camera"></i> Buka Kamera HP
+        </button>
+        <button id="btnStop" onclick="stopScanner()" class="w-full bg-rose-600 hover:bg-rose-500 active:scale-95 text-white py-2 rounded-xl font-semibold text-xs transition hidden flex items-center justify-center gap-2 shadow-lg">
+          <i class="fa-solid fa-stop"></i> Tutup Kamera
+        </button>
 
-      <p class="text-[9px] text-slate-400 mt-1">
-        💡 <i>Dukungan USB Scanner Aktif. Cukup dekatkan QR ke scanner fisik.</i>
-      </p>
+        <p class="text-[9px] text-slate-400 mt-1">
+          💡 <i>Dukungan USB Scanner Aktif. Cukup dekatkan QR ke scanner fisik.</i>
+        </p>
+      </div>
     </div>
 
   </div>
 
-  <footer class="text-center text-[9px] text-slate-500 pt-1">
-    Presensi Digital • SMPN 1 Rancah <span class="font-bold text-slate-400">v3.6 Unified</span>
+  <!-- JENDELA MODAL DAFTAR SISWA TERSCAN -->
+  <div id="modalScanned" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md max-h-[80vh] flex flex-col p-4 shadow-2xl">
+      <div class="flex justify-between items-center pb-2.5 border-b border-slate-700 mb-2.5">
+        <div>
+          <h3 class="text-sm font-bold text-indigo-400 flex items-center gap-1.5">
+            <i class="fa-solid fa-list-check"></i> Siswa Terscan Hari Ini
+          </h3>
+          <p class="text-[10px] text-slate-400">Daftar siswa yang sudah tercatat di sistem HP ini</p>
+        </div>
+        <button onclick="closeScannedModal()" class="w-7 h-7 bg-slate-700 hover:bg-slate-600 rounded-full flex items-center justify-center text-slate-300 hover:text-white transition">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <div id="modalScannedList" class="overflow-y-auto flex-1 space-y-1.5 pr-1 text-xs">
+        <!-- JS Daftar Generator -->
+      </div>
+
+      <div class="pt-2.5 mt-2 border-t border-slate-700/80 flex justify-between items-center text-[10px] text-slate-400">
+        <span>Total: <b id="modalScannedTotal" class="text-emerald-400 font-extrabold">0</b> Siswa</span>
+        <button onclick="clearScannedList()" class="text-rose-400 hover:text-rose-300 font-semibold flex items-center gap-1">
+          <i class="fa-solid fa-trash-can"></i> Reset Sesi
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="text-center text-[9px] text-slate-500 pt-1 flex-shrink-0">
+    Presensi Digital • SMPN 1 Rancah <span class="font-bold text-slate-400">v3.7 Unified</span>
   </footer>
 
   <script>
@@ -107,12 +143,97 @@
     let isProcessing = false;
     let masterSiswaLokal = [];
     
-    let activeScanMode = "auto"; // 'auto', 'reguler', 'dzuhur'
+    let activeScanMode = "auto"; 
     let lastScannedCode = "";
     let lastScannedTime = 0;
     let autoHideTimer = null;
     let isSyncing = false;
     let totalOfflineSync = 0;
+
+    function getTodayKey() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    function getScannedTodayList() {
+      const key = "scanned_today_" + getTodayKey();
+      return JSON.parse(localStorage.getItem(key) || "[]");
+    }
+
+    function saveScannedTodayList(list) {
+      const key = "scanned_today_" + getTodayKey();
+      localStorage.setItem(key, JSON.stringify(list));
+      updateScannedUI();
+    }
+
+    function updateScannedUI() {
+      const list = getScannedTodayList();
+      const elCount = document.getElementById("scannedCount");
+      if (elCount) elCount.textContent = list.length;
+    }
+
+    function addStudentToScannedList(studentData) {
+      let list = getScannedTodayList();
+      // Sisipkan di baris paling atas agar yang terbaru muncul paling awal
+      list.unshift(studentData);
+      saveScannedTodayList(list);
+    }
+
+    function openScannedModal() {
+      const modal = document.getElementById("modalScanned");
+      const listContainer = document.getElementById("modalScannedList");
+      const totalEl = document.getElementById("modalScannedTotal");
+      const list = getScannedTodayList();
+
+      totalEl.textContent = list.length;
+
+      if (list.length === 0) {
+        listContainer.innerHTML = `
+          <div class="text-center py-8 text-slate-500 italic">
+            <i class="fa-solid fa-folder-open text-2xl mb-1 text-slate-600 block"></i>
+            Belum ada siswa yang di-scan hari ini.
+          </div>`;
+      } else {
+        let html = "";
+        list.forEach((s, idx) => {
+          const isDzu = (s.tipe === "dzuhur");
+          const badgeMode = isDzu 
+            ? '<span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold text-[9px]">🕌 Dzuhur</span>'
+            : '<span class="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-bold text-[9px]">☀️ Reguler</span>';
+
+          html += `
+            <div class="p-2 bg-slate-700/60 rounded-xl border border-slate-600/60 flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2 min-w-0">
+                <div class="w-6 h-6 rounded-full bg-slate-800 border border-slate-600 flex items-center justify-center font-bold text-[10px] text-slate-400 flex-shrink-0">
+                  ${list.length - idx}
+                </div>
+                <div class="min-w-0">
+                  <h4 class="font-bold text-slate-100 truncate">${s.nama}</h4>
+                  <p class="text-[10px] text-slate-400">Kelas ${s.kelas} • NISN: ${s.nisn}</p>
+                </div>
+              </div>
+              <div class="text-right flex-shrink-0">
+                ${badgeMode}
+                <div class="text-[9px] text-slate-400 font-mono mt-0.5">${s.jam}</div>
+              </div>
+            </div>`;
+        });
+        listContainer.innerHTML = html;
+      }
+
+      modal.classList.remove("hidden");
+    }
+
+    function closeScannedModal() {
+      document.getElementById("modalScanned").classList.add("hidden");
+    }
+
+    function clearScannedList() {
+      if (confirm("Apakah Anda yakin ingin meriset daftar terscan lokal hari ini?")) {
+        saveScannedTodayList([]);
+        openScannedModal();
+      }
+    }
 
     function initAudio() {
       if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -144,13 +265,9 @@
     function getEffectiveMode() {
       if (activeScanMode !== "auto") return activeScanMode;
       
-      // Logika Deteksi Jam Otomatis
       const now = new Date();
-      const hours = now.getHours();
-      const minutes = now.getMinutes();
-      const totalMin = hours * 60 + minutes;
+      const totalMin = now.getHours() * 60 + now.getMinutes();
 
-      // Rentang Jam Dzuhur: 11:45 - 13:00 (705 s.d 780 menit)
       if (totalMin >= 705 && totalMin <= 780) {
         return "dzuhur";
       }
@@ -182,8 +299,14 @@
       const statusEl = document.getElementById("dataStatus");
       const inputUsb = document.getElementById("inputUsbScanner");
 
-      document.body.addEventListener("click", () => { if(inputUsb) inputUsb.focus(); });
+      document.body.addEventListener("click", (e) => {
+        if (!e.target.closest('button, input, select, a, #modalScanned')) {
+          if(inputUsb) inputUsb.focus();
+        }
+      });
+      
       updateOfflineUI();
+      updateScannedUI();
 
       fetch(WEB_APP_URL)
         .then(res => res.json())
@@ -191,16 +314,16 @@
           masterSiswaLokal = data.master || [];
           localStorage.setItem("masterSiswaCache", JSON.stringify(masterSiswaLokal));
           if (statusEl) {
-            statusEl.className = "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
-            statusEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> Siap Terpadu (${masterSiswaLokal.length} Siswa)`;
+            statusEl.className = "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+            statusEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> Ready (${masterSiswaLokal.length})`;
           }
           syncOfflineData();
         })
         .catch(err => {
           masterSiswaLokal = JSON.parse(localStorage.getItem("masterSiswaCache") || "[]");
           if (statusEl) {
-            statusEl.className = "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20";
-            statusEl.innerHTML = `<i class="fa-solid fa-wifi"></i> Offline Mode (${masterSiswaLokal.length} Siswa)`;
+            statusEl.className = "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20";
+            statusEl.innerHTML = `<i class="fa-solid fa-wifi"></i> Offline (${masterSiswaLokal.length})`;
           }
         });
 
@@ -229,7 +352,7 @@
 
       html5QrCode.start(
         { facingMode: "environment" },
-        { fps: 15, qrbox: { width: 200, height: 200 } },
+        { fps: 15, qrbox: { width: 180, height: 180 } },
         (decodedText) => prosesScanUnified(decodedText)
       ).then(() => {
         document.getElementById("btnStart").classList.add("hidden");
@@ -268,8 +391,21 @@
       );
 
       const namaSiswa = siswaDitemukan ? siswaDitemukan.nama : "Siswa QR: " + decodedText;
-      const detailSiswa = siswaDitemukan ? ("Kelas " + siswaDitemukan.kelas) : "QR Terdeteksi";
+      const kelasSiswa = siswaDitemukan ? siswaDitemukan.kelas : "-";
+      const nisnSiswa = siswaDitemukan ? siswaDitemukan.nisn : decodedText;
+      const detailSiswa = siswaDitemukan ? ("Kelas " + kelasSiswa) : "QR Terdeteksi";
       const fotoUrl = (siswaDitemukan && siswaDitemukan.foto) ? siswaDitemukan.foto : "";
+
+      const timestampJam = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+      // Catat ke memori terscan lokal
+      addStudentToScannedList({
+        nisn: nisnSiswa,
+        nama: namaSiswa,
+        kelas: kelasSiswa,
+        jam: timestampJam,
+        tipe: isDzuhurMode ? "dzuhur" : "reguler"
+      });
 
       const box = document.getElementById("statusBox");
       const elNama = document.getElementById("statusNama");
@@ -286,19 +422,13 @@
         elFoto.classList.add("hidden");
       }
 
-      box.className = "bg-slate-800 p-2.5 rounded-xl border border-indigo-500 text-center shadow-lg transition-all duration-150 flex flex-col items-center";
+      box.className = "absolute top-24 left-2 right-2 z-30 bg-slate-800/95 backdrop-blur-md p-3 rounded-xl border border-indigo-500 text-center shadow-2xl flex flex-col items-center transition-all duration-150";
       box.classList.remove("hidden");
 
       setTimeout(() => { isProcessing = false; }, 500);
 
-      const payload = {
-        code: decodedText,
-        token: TOKEN_GURU
-      };
-
-      if (isDzuhurMode) {
-        payload.tipe = "dzuhur";
-      }
+      const payload = { code: decodedText, token: TOKEN_GURU };
+      if (isDzuhurMode) payload.tipe = "dzuhur";
 
       fetch(WEB_APP_URL, {
         method: "POST",
@@ -308,33 +438,29 @@
       .then(res => {
         if (res.status === "success") {
           box.className = isDzuhurMode 
-            ? "bg-emerald-950 p-2.5 rounded-xl border-2 border-emerald-400 text-center shadow-lg flex flex-col items-center"
-            : "bg-emerald-900/90 p-2.5 rounded-xl border border-emerald-500 text-center shadow-lg flex flex-col items-center";
+            ? "absolute top-24 left-2 right-2 z-30 bg-emerald-950/95 backdrop-blur-md p-3 rounded-xl border-2 border-emerald-400 text-center shadow-2xl flex flex-col items-center"
+            : "absolute top-24 left-2 right-2 z-30 bg-emerald-900/95 backdrop-blur-md p-3 rounded-xl border border-emerald-500 text-center shadow-2xl flex flex-col items-center";
           
           elNama.textContent = (isDzuhurMode ? "🕌 " : "✅ ") + (siswaDitemukan ? siswaDitemukan.nama : res.message);
-          elDetail.textContent = detailSiswa + " • Waktu: " + (res.jam || "WIB");
+          elDetail.textContent = detailSiswa + " • Waktu: " + (res.jam || timestampJam);
         } else {
-          box.className = "bg-amber-900/90 p-2.5 rounded-xl border border-amber-500 text-center shadow-lg flex flex-col items-center";
+          box.className = "absolute top-24 left-2 right-2 z-30 bg-amber-900/95 backdrop-blur-md p-3 rounded-xl border border-amber-500 text-center shadow-2xl flex flex-col items-center";
           elNama.textContent = "⚠️ " + namaSiswa;
           elDetail.textContent = res.message || "Data ditolak server.";
         }
       })
       .catch(err => {
-        // Penanganan Offline
         const queue = getOfflineQueue();
-        const timestampLokal = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-        
         queue.push({
           code: decodedText,
           token: TOKEN_GURU,
           tipe: isDzuhurMode ? "dzuhur" : "",
-          time: timestampLokal,
+          time: timestampJam,
           scanTime: new Date().toISOString()
         });
-        
         saveOfflineQueue(queue);
 
-        box.className = "bg-amber-900/90 p-2.5 rounded-xl border border-amber-500 text-center shadow-lg flex flex-col items-center";
+        box.className = "absolute top-24 left-2 right-2 z-30 bg-amber-900/95 backdrop-blur-md p-3 rounded-xl border border-amber-500 text-center shadow-2xl flex flex-col items-center";
         elNama.textContent = "📦 " + namaSiswa;
         elDetail.textContent = detailSiswa + " • Tersimpan Offline";
       })
