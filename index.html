@@ -3,72 +3,101 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Scanner HP Guru - SMPN 1 RANCAH (v3.5 Progress UI)</title>
+  <title>Scanner Presensi Terpadu - SMPN 1 RANCAH (v3.6)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/html5-qrcode"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .active-mode {
+      background-color: #4f46e5 !important;
+      color: #ffffff !important;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .active-mode-dzuhur {
+      background-color: #059669 !important;
+      color: #ffffff !important;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+  </style>
 </head>
 <body class="bg-slate-900 text-white h-screen overflow-hidden flex flex-col justify-between p-3 font-sans">
 
-  <div class="max-w-md mx-auto w-full flex-1 flex flex-col justify-start space-y-2.5">
+  <div class="max-w-md mx-auto w-full flex-1 flex flex-col justify-start space-y-2">
     
-    <!-- 1. HEADER + INDIKATOR STATUS -->
-    <div class="text-center py-2.5 px-3 bg-slate-800 rounded-xl border border-slate-700 shadow-md">
+    <!-- 1. HEADER & INDIKATOR STATUS -->
+    <div class="text-center py-2 px-3 bg-slate-800 rounded-xl border border-slate-700 shadow-md">
       <div class="flex items-center justify-center gap-2">
-        <h1 class="text-lg font-bold text-indigo-400"><i class="fa-solid fa-camera-retro mr-1.5"></i>Scanner Presensi</h1>
-        <span class="text-[10px] font-extrabold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full">v3.5</span>
+        <h1 class="text-base font-bold text-indigo-400"><i class="fa-solid fa-qrcode mr-1.5"></i>Scanner Terpadu</h1>
+        <span class="text-[10px] font-extrabold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full">v3.6 Unified</span>
       </div>
-      <p class="text-[10px] font-bold text-slate-400 mt-0.5 uppercase tracking-wider">SMPN 1 RANCAH</p>
       
-      <!-- Lencana Indikator Sinyal & Offline Queue -->
+      <!-- TOGGLE PILIHAN MODE SCAN -->
+      <div class="grid grid-cols-3 gap-1 bg-slate-900 p-1 rounded-lg border border-slate-700 mt-2 text-[10px] font-bold">
+        <button id="btnModeAuto" onclick="setScanMode('auto')" class="py-1.5 rounded-md transition text-slate-400 active-mode">
+          ⚡ Auto Jam
+        </button>
+        <button id="btnModeReguler" onclick="setScanMode('reguler')" class="py-1.5 rounded-md transition text-slate-400">
+          ☀️ Masuk/Pulang
+        </button>
+        <button id="btnModeDzuhur" onclick="setScanMode('dzuhur')" class="py-1.5 rounded-md transition text-slate-400">
+          🕌 Dzuhur
+        </button>
+      </div>
+
+      <!-- STATUS DATA & OFFLINE QUEUE -->
       <div class="mt-1.5 flex flex-wrap justify-center gap-1.5">
-        <span id="dataStatus" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+        <span id="dataStatus" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
           <i class="fa-solid fa-spinner fa-spin"></i> Memuat data...
         </span>
-        <span id="offlineBadge" class="hidden inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500 text-slate-950 shadow-sm animate-pulse">
-          <i class="fa-solid fa-box-archive"></i> <span id="offlineCount">0</span> Antrean Offline
+        <span id="offlineBadge" class="hidden inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-slate-950 shadow-sm animate-pulse">
+          <i class="fa-solid fa-box-archive"></i> <span id="offlineCount">0</span> Offline
         </span>
       </div>
 
-      <!-- BAR STATUS PENGIRIMAN OFFLINE (NEW) -->
-      <div id="progressContainer" class="hidden mt-2 pt-1 border-t border-slate-700/50">
-        <div class="flex justify-between items-center text-[10px] text-amber-400 font-semibold mb-1 px-1">
+      <!-- PROGRESS BAR SINKRONISASI -->
+      <div id="progressContainer" class="hidden mt-1.5 pt-1 border-t border-slate-700/50">
+        <div class="flex justify-between items-center text-[9px] text-amber-400 font-semibold mb-0.5 px-1">
           <span id="progressText"><i class="fa-solid fa-cloud-arrow-up mr-1"></i> Mengirim antrean...</span>
           <span id="progressPercent">0%</span>
         </div>
         <div class="w-full bg-slate-700 h-1.5 rounded-full overflow-hidden">
-          <div id="progressBar" class="bg-amber-400 h-full w-0 transition-all duration-300 ease-out rounded-full shadow-[0_0_8px_rgba(251,191,36,0.5)]"></div>
+          <div id="progressBar" class="bg-amber-400 h-full w-0 transition-all duration-300 ease-out rounded-full"></div>
         </div>
       </div>
     </div>
 
-    <!-- 2. KOTAK HASIL SCAN (NOTIFIKASI INSTAN) -->
-    <div id="statusBox" class="bg-slate-800 p-3 rounded-xl border border-slate-700 hidden text-center transition-all duration-200 shadow-lg">
-      <h2 id="statusNama" class="text-base font-bold"></h2>
+    <!-- 2. POPUP HASIL SCAN -->
+    <div id="statusBox" class="bg-slate-800 p-2.5 rounded-xl border border-slate-700 hidden text-center transition-all duration-200 shadow-lg flex flex-col items-center">
+      <img id="statusFoto" src="https://via.placeholder.com/100?text=Foto" class="w-16 h-20 object-cover rounded-lg border-2 border-indigo-400 mb-1.5 shadow-md hidden">
+      <h2 id="statusNama" class="text-sm font-bold"></h2>
       <p id="statusDetail" class="text-xs text-slate-300 mt-0.5"></p>
     </div>
 
-    <!-- 3. AREA KAMERA SCANNER -->
-    <div class="bg-slate-800 p-3 rounded-xl border border-slate-700 shadow-xl text-center flex-1 flex flex-col justify-center min-h-0">
-      <div id="reader" class="overflow-hidden rounded-lg bg-black border-2 border-slate-600 mb-2.5 w-full flex items-center justify-center"></div>
+    <!-- 3. AREA KAMERA & USB SCANNER -->
+    <div class="bg-slate-800 p-2.5 rounded-xl border border-slate-700 shadow-xl text-center flex-1 flex flex-col justify-center min-h-0 relative">
+      <input type="text" id="inputUsbScanner" class="opacity-0 absolute -z-10" autofocus>
+
+      <div id="reader" class="overflow-hidden rounded-lg bg-black border-2 border-slate-600 mb-2 w-full flex items-center justify-center"></div>
       
-      <button id="btnStart" onclick="startScanner()" class="w-full bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white py-2.5 rounded-xl font-semibold text-sm transition flex items-center justify-center gap-2 shadow-lg">
-        <i class="fa-solid fa-play"></i> Buka Kamera Scanner
+      <button id="btnStart" onclick="startScanner()" class="w-full bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white py-2 rounded-xl font-semibold text-xs transition flex items-center justify-center gap-2 shadow-lg">
+        <i class="fa-solid fa-camera"></i> Buka Kamera HP
       </button>
-      <button id="btnStop" onclick="stopScanner()" class="w-full bg-rose-600 hover:bg-rose-500 active:scale-95 text-white py-2.5 rounded-xl font-semibold text-sm transition hidden flex items-center justify-center gap-2 shadow-lg">
+      <button id="btnStop" onclick="stopScanner()" class="w-full bg-rose-600 hover:bg-rose-500 active:scale-95 text-white py-2 rounded-xl font-semibold text-xs transition hidden flex items-center justify-center gap-2 shadow-lg">
         <i class="fa-solid fa-stop"></i> Tutup Kamera
       </button>
+
+      <p class="text-[9px] text-slate-400 mt-1">
+        💡 <i>Dukungan USB Scanner Aktif. Cukup dekatkan QR ke scanner fisik.</i>
+      </p>
     </div>
 
   </div>
 
-  <!-- FOOTER -->
-  <footer class="text-center text-[10px] text-slate-500 pt-1">
-    Presensi Digital • SMPN 1 Rancah <span class="font-bold text-slate-400">v3.5 Progress UI</span>
+  <footer class="text-center text-[9px] text-slate-500 pt-1">
+    Presensi Digital • SMPN 1 Rancah <span class="font-bold text-slate-400">v3.6 Unified</span>
   </footer>
 
   <script>
-    const APP_VERSION = "v3.5";
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzq05A9BpVJFjNkHn7p2QDjbaY2ajsWjVXk5sVDkH3rStFaAC5XgEkndZSg39zOLX_2/exec";
     const TOKEN_GURU = "GURU2026"; 
     const BATCH_SIZE = 15;
@@ -78,6 +107,7 @@
     let isProcessing = false;
     let masterSiswaLokal = [];
     
+    let activeScanMode = "auto"; // 'auto', 'reguler', 'dzuhur'
     let lastScannedCode = "";
     let lastScannedTime = 0;
     let autoHideTimer = null;
@@ -85,32 +115,46 @@
     let totalOfflineSync = 0;
 
     function initAudio() {
-      if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
     }
 
-    function playBeep() {
+    function playBeep(isDzuhur = false) {
       try {
         initAudio();
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-        
         osc.type = "sine";
-        osc.frequency.value = 900;
-        
+        osc.frequency.value = isDzuhur ? 1100 : 850;
         osc.connect(gain);
         gain.connect(audioCtx.destination);
-        
         osc.start();
         gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.15);
         osc.stop(audioCtx.currentTime + 0.15);
-      } catch (e) {
-        console.log("Audio Error:", e);
+      } catch (e) {}
+    }
+
+    function setScanMode(mode) {
+      activeScanMode = mode;
+      document.getElementById("btnModeAuto").className = "py-1.5 rounded-md transition text-slate-400" + (mode === 'auto' ? ' active-mode' : '');
+      document.getElementById("btnModeReguler").className = "py-1.5 rounded-md transition text-slate-400" + (mode === 'reguler' ? ' active-mode' : '');
+      document.getElementById("btnModeDzuhur").className = "py-1.5 rounded-md transition text-slate-400" + (mode === 'dzuhur' ? ' active-mode-dzuhur' : '');
+    }
+
+    function getEffectiveMode() {
+      if (activeScanMode !== "auto") return activeScanMode;
+      
+      // Logika Deteksi Jam Otomatis
+      const now = new Date();
+      const hours = now.getHours();
+      const minutes = now.getMinutes();
+      const totalMin = hours * 60 + minutes;
+
+      // Rentang Jam Dzuhur: 11:45 - 13:00 (705 s.d 780 menit)
+      if (totalMin >= 705 && totalMin <= 780) {
+        return "dzuhur";
       }
+      return "reguler";
     }
 
     function getOfflineQueue() {
@@ -126,7 +170,6 @@
       const queue = getOfflineQueue();
       const badge = document.getElementById("offlineBadge");
       const countEl = document.getElementById("offlineCount");
-      
       if (queue.length > 0) {
         badge.classList.remove("hidden");
         countEl.textContent = queue.length;
@@ -137,6 +180,9 @@
 
     document.addEventListener("DOMContentLoaded", () => {
       const statusEl = document.getElementById("dataStatus");
+      const inputUsb = document.getElementById("inputUsbScanner");
+
+      document.body.addEventListener("click", () => { if(inputUsb) inputUsb.focus(); });
       updateOfflineUI();
 
       fetch(WEB_APP_URL)
@@ -145,46 +191,50 @@
           masterSiswaLokal = data.master || [];
           localStorage.setItem("masterSiswaCache", JSON.stringify(masterSiswaLokal));
           if (statusEl) {
-            statusEl.className = "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
-            statusEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> Siap (${masterSiswaLokal.length} Siswa)`;
+            statusEl.className = "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+            statusEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> Siap Terpadu (${masterSiswaLokal.length} Siswa)`;
           }
           syncOfflineData();
         })
         .catch(err => {
           masterSiswaLokal = JSON.parse(localStorage.getItem("masterSiswaCache") || "[]");
           if (statusEl) {
-            statusEl.className = "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20";
-            statusEl.innerHTML = `<i class="fa-solid fa-wifi"></i> Mode Offline (${masterSiswaLokal.length} Siswa)`;
+            statusEl.className = "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20";
+            statusEl.innerHTML = `<i class="fa-solid fa-wifi"></i> Offline Mode (${masterSiswaLokal.length} Siswa)`;
           }
         });
+
+      let bufferUsb = "";
+      let timerUsb = null;
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          if (bufferUsb.length >= 3) {
+            prosesScanUnified(bufferUsb);
+            bufferUsb = "";
+          }
+        } else if (e.key.length === 1) {
+          bufferUsb += e.key;
+          clearTimeout(timerUsb);
+          timerUsb = setTimeout(() => { bufferUsb = ""; }, 100);
+        }
+      });
 
       window.addEventListener("online", syncOfflineData);
     });
 
     function startScanner() {
       initAudio();
-
-      if (!html5QrCode) {
-        html5QrCode = new Html5Qrcode("reader");
-      }
-
+      if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
       if (html5QrCode.isScanning) return;
 
       html5QrCode.start(
         { facingMode: "environment" },
-        { 
-          fps: 15, 
-          qrbox: (viewfinderWidth, viewfinderHeight) => {
-            const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-            return { width: Math.floor(minEdge * 0.7), height: Math.floor(minEdge * 0.7) };
-          },
-          aspectRatio: 1.0
-        },
-        onScanSuccess
+        { fps: 15, qrbox: { width: 200, height: 200 } },
+        (decodedText) => prosesScanUnified(decodedText)
       ).then(() => {
         document.getElementById("btnStart").classList.add("hidden");
         document.getElementById("btnStop").classList.remove("hidden");
-      }).catch(err => alert("Kamera Gagal Dibuka: " + err));
+      });
     }
 
     function stopScanner() {
@@ -196,7 +246,7 @@
       }
     }
 
-    function onScanSuccess(decodedText) {
+    function prosesScanUnified(decodedText) {
       const now = Date.now();
       const targetCode = String(decodedText).trim().toLowerCase();
 
@@ -206,10 +256,12 @@
 
       lastScannedCode = targetCode;
       lastScannedTime = now;
-
       if (autoHideTimer) clearTimeout(autoHideTimer);
 
-      playBeep();
+      const currentMode = getEffectiveMode();
+      const isDzuhurMode = (currentMode === "dzuhur");
+
+      playBeep(isDzuhurMode);
 
       const siswaDitemukan = masterSiswaLokal.find(s => 
         String(s.nisn).trim().toLowerCase() === targetCode
@@ -217,72 +269,81 @@
 
       const namaSiswa = siswaDitemukan ? siswaDitemukan.nama : "Siswa QR: " + decodedText;
       const detailSiswa = siswaDitemukan ? ("Kelas " + siswaDitemukan.kelas) : "QR Terdeteksi";
+      const fotoUrl = (siswaDitemukan && siswaDitemukan.foto) ? siswaDitemukan.foto : "";
 
       const box = document.getElementById("statusBox");
       const elNama = document.getElementById("statusNama");
       const elDetail = document.getElementById("statusDetail");
+      const elFoto = document.getElementById("statusFoto");
 
       elNama.textContent = namaSiswa;
-      elDetail.textContent = detailSiswa + " • ⚡ Mencatat...";
-      box.className = "bg-indigo-900/90 border border-indigo-500 p-3 rounded-xl text-center shadow-lg transition-all duration-150";
+      elDetail.textContent = detailSiswa + (isDzuhurMode ? " • 🕌 Mencatat Dzuhur..." : " • ⚡ Mencatat Presensi...");
+      
+      if (fotoUrl && isDzuhurMode) {
+        elFoto.src = fotoUrl;
+        elFoto.classList.remove("hidden");
+      } else {
+        elFoto.classList.add("hidden");
+      }
+
+      box.className = "bg-slate-800 p-2.5 rounded-xl border border-indigo-500 text-center shadow-lg transition-all duration-150 flex flex-col items-center";
       box.classList.remove("hidden");
 
       setTimeout(() => { isProcessing = false; }, 500);
 
-      const currentScanCode = targetCode;
+      const payload = {
+        code: decodedText,
+        token: TOKEN_GURU
+      };
+
+      if (isDzuhurMode) {
+        payload.tipe = "dzuhur";
+      }
 
       fetch(WEB_APP_URL, {
         method: "POST",
-        body: JSON.stringify({ 
-          code: decodedText,
-          token: TOKEN_GURU 
-        })
+        body: JSON.stringify(payload)
       })
       .then(res => res.json())
       .then(res => {
-        if (lastScannedCode === currentScanCode) {
-          if (res.status === "success") {
-            box.className = "bg-emerald-900/90 border border-emerald-500 p-3 rounded-xl text-center shadow-lg";
-            elNama.textContent = "✅ " + (siswaDitemukan ? siswaDitemukan.nama : res.message);
-            elDetail.textContent = detailSiswa + " • Waktu: " + (res.jam || "WIB");
-          } else {
-            box.className = "bg-amber-900/90 border border-amber-500 p-3 rounded-xl text-center shadow-lg";
-            elNama.textContent = "⚠️ " + namaSiswa;
-            elDetail.textContent = res.message || "Data ditolak server.";
-          }
+        if (res.status === "success") {
+          box.className = isDzuhurMode 
+            ? "bg-emerald-950 p-2.5 rounded-xl border-2 border-emerald-400 text-center shadow-lg flex flex-col items-center"
+            : "bg-emerald-900/90 p-2.5 rounded-xl border border-emerald-500 text-center shadow-lg flex flex-col items-center";
+          
+          elNama.textContent = (isDzuhurMode ? "🕌 " : "✅ ") + (siswaDitemukan ? siswaDitemukan.nama : res.message);
+          elDetail.textContent = detailSiswa + " • Waktu: " + (res.jam || "WIB");
+        } else {
+          box.className = "bg-amber-900/90 p-2.5 rounded-xl border border-amber-500 text-center shadow-lg flex flex-col items-center";
+          elNama.textContent = "⚠️ " + namaSiswa;
+          elDetail.textContent = res.message || "Data ditolak server.";
         }
       })
       .catch(err => {
+        // Penanganan Offline
         const queue = getOfflineQueue();
         const timestampLokal = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
         
         queue.push({
           code: decodedText,
           token: TOKEN_GURU,
+          tipe: isDzuhurMode ? "dzuhur" : "",
           time: timestampLokal,
           scanTime: new Date().toISOString()
         });
         
         saveOfflineQueue(queue);
 
-        if (lastScannedCode === currentScanCode) {
-          box.className = "bg-amber-900/90 border border-amber-500 p-3 rounded-xl text-center shadow-lg";
-          elNama.textContent = "📦 " + namaSiswa;
-          elDetail.textContent = detailSiswa + " • Tersimpan Offline (Sinyal Lemah)";
-        }
+        box.className = "bg-amber-900/90 p-2.5 rounded-xl border border-amber-500 text-center shadow-lg flex flex-col items-center";
+        elNama.textContent = "📦 " + namaSiswa;
+        elDetail.textContent = detailSiswa + " • Tersimpan Offline";
       })
       .finally(() => {
-        autoHideTimer = setTimeout(() => {
-          if (lastScannedCode === currentScanCode) {
-            box.classList.add("hidden");
-          }
-        }, 3000);
-
+        autoHideTimer = setTimeout(() => { box.classList.add("hidden"); }, 3000);
         syncOfflineData();
       });
     }
 
-    // SINKRONISASI & LOGIKA PROGRESS BAR
     function syncOfflineData() {
       if (isSyncing) return;
       const currentQueue = getOfflineQueue();
@@ -311,20 +372,16 @@
           let freshQueue = getOfflineQueue();
           freshQueue.splice(0, chunkToSync.length);
           saveOfflineQueue(freshQueue);
-
           updateProgressBar(freshQueue.length, totalOfflineSync);
         }
         isSyncing = false;
-
         if (getOfflineQueue().length > 0) {
           setTimeout(syncOfflineData, 300);
         } else {
           completeProgressBar();
         }
       })
-      .catch(err => {
-        isSyncing = false;
-      });
+      .catch(err => { isSyncing = false; });
     }
 
     function updateProgressBar(remainingCount, totalCount) {
@@ -334,7 +391,6 @@
       const pPercent = document.getElementById("progressPercent");
 
       if (!container || !pBar) return;
-
       container.classList.remove("hidden");
       
       const completed = totalCount - remainingCount;
@@ -342,7 +398,7 @@
 
       pBar.style.width = percent + "%";
       if (pPercent) pPercent.textContent = percent + "%";
-      if (pText) pText.innerHTML = `<i class="fa-solid fa-cloud-arrow-up mr-1 animate-bounce"></i> Mengirim (${completed}/${totalCount})...`;
+      if (pText) pText.innerHTML = `<i class="fa-solid fa-cloud-arrow-up mr-1 animate-bounce"></i> Syncing (${completed}/${totalCount})...`;
     }
 
     function completeProgressBar() {
@@ -352,17 +408,16 @@
       const pPercent = document.getElementById("progressPercent");
 
       if (!pBar) return;
-
       pBar.style.width = "100%";
       if (pPercent) pPercent.textContent = "100%";
-      if (pText) pText.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400 mr-1"></i> Semua Data Terkirim`;
+      if (pText) pText.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400 mr-1"></i> Data Terkirim`;
 
       setTimeout(() => {
         if (getOfflineQueue().length === 0) {
           if (container) container.classList.add("hidden");
           totalOfflineSync = 0;
         }
-      }, 3500);
+      }, 3000);
     }
   </script>
 </body>
