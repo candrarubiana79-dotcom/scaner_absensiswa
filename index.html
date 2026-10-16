@@ -174,7 +174,6 @@
 
     function addStudentToScannedList(studentData) {
       let list = getScannedTodayList();
-      // Sisipkan di baris paling atas agar yang terbaru muncul paling awal
       list.unshift(studentData);
       saveScannedTodayList(list);
     }
@@ -266,6 +265,11 @@
       if (activeScanMode !== "auto") return activeScanMode;
       
       const now = new Date();
+      // PENGECUALIAN HARI JUMAT: AUTO MODE TETAP REGULER (MASUK/PULANG)
+      if (now.getDay() === 5) {
+        return "reguler";
+      }
+
       const totalMin = now.getHours() * 60 + now.getMinutes();
 
       if (totalMin >= 705 && totalMin <= 780) {
@@ -398,7 +402,6 @@
 
       const timestampJam = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 
-      // Catat ke memori terscan lokal
       addStudentToScannedList({
         nisn: nisnSiswa,
         nama: namaSiswa,
@@ -446,105 +449,4 @@
         } else {
           box.className = "absolute top-24 left-2 right-2 z-30 bg-amber-900/95 backdrop-blur-md p-3 rounded-xl border border-amber-500 text-center shadow-2xl flex flex-col items-center";
           elNama.textContent = "⚠️ " + namaSiswa;
-          elDetail.textContent = res.message || "Data ditolak server.";
-        }
-      })
-      .catch(err => {
-        const queue = getOfflineQueue();
-        queue.push({
-          code: decodedText,
-          token: TOKEN_GURU,
-          tipe: isDzuhurMode ? "dzuhur" : "",
-          time: timestampJam,
-          scanTime: new Date().toISOString()
-        });
-        saveOfflineQueue(queue);
-
-        box.className = "absolute top-24 left-2 right-2 z-30 bg-amber-900/95 backdrop-blur-md p-3 rounded-xl border border-amber-500 text-center shadow-2xl flex flex-col items-center";
-        elNama.textContent = "📦 " + namaSiswa;
-        elDetail.textContent = detailSiswa + " • Tersimpan Offline";
-      })
-      .finally(() => {
-        autoHideTimer = setTimeout(() => { box.classList.add("hidden"); }, 3000);
-        syncOfflineData();
-      });
-    }
-
-    function syncOfflineData() {
-      if (isSyncing) return;
-      const currentQueue = getOfflineQueue();
-      if (currentQueue.length === 0) return;
-
-      if (totalOfflineSync === 0 || totalOfflineSync < currentQueue.length) {
-        totalOfflineSync = currentQueue.length;
-      }
-
-      isSyncing = true;
-      updateProgressBar(currentQueue.length, totalOfflineSync);
-
-      const chunkToSync = currentQueue.slice(0, BATCH_SIZE);
-
-      fetch(WEB_APP_URL, {
-        method: "POST",
-        body: JSON.stringify({
-          tipe: "batch_offline",
-          token: TOKEN_GURU,
-          batch: chunkToSync
-        })
-      })
-      .then(res => res.json())
-      .then(res => {
-        if (res.status === "success") {
-          let freshQueue = getOfflineQueue();
-          freshQueue.splice(0, chunkToSync.length);
-          saveOfflineQueue(freshQueue);
-          updateProgressBar(freshQueue.length, totalOfflineSync);
-        }
-        isSyncing = false;
-        if (getOfflineQueue().length > 0) {
-          setTimeout(syncOfflineData, 300);
-        } else {
-          completeProgressBar();
-        }
-      })
-      .catch(err => { isSyncing = false; });
-    }
-
-    function updateProgressBar(remainingCount, totalCount) {
-      const container = document.getElementById("progressContainer");
-      const pText = document.getElementById("progressText");
-      const pBar = document.getElementById("progressBar");
-      const pPercent = document.getElementById("progressPercent");
-
-      if (!container || !pBar) return;
-      container.classList.remove("hidden");
-      
-      const completed = totalCount - remainingCount;
-      const percent = totalCount > 0 ? Math.round((completed / totalCount) * 100) : 100;
-
-      pBar.style.width = percent + "%";
-      if (pPercent) pPercent.textContent = percent + "%";
-      if (pText) pText.innerHTML = `<i class="fa-solid fa-cloud-arrow-up mr-1 animate-bounce"></i> Syncing (${completed}/${totalCount})...`;
-    }
-
-    function completeProgressBar() {
-      const container = document.getElementById("progressContainer");
-      const pText = document.getElementById("progressText");
-      const pBar = document.getElementById("progressBar");
-      const pPercent = document.getElementById("progressPercent");
-
-      if (!pBar) return;
-      pBar.style.width = "100%";
-      if (pPercent) pPercent.textContent = "100%";
-      if (pText) pText.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400 mr-1"></i> Data Terkirim`;
-
-      setTimeout(() => {
-        if (getOfflineQueue().length === 0) {
-          if (container) container.classList.add("hidden");
-          totalOfflineSync = 0;
-        }
-      }, 3000);
-    }
-  </script>
-</body>
-</html>
+          elDetail.textContent = 
