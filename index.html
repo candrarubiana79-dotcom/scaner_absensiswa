@@ -268,7 +268,8 @@
       const now = new Date();
       const totalMin = now.getHours() * 60 + now.getMinutes();
 
-      if (totalMin >= 705 && totalMin <= 780) {
+      // 690 menit = 11:30 WIB, 780 menit = 13:00 WIB
+      if (totalMin >= 690 && totalMin <= 780) {
         return "dzuhur";
       }
       return "reguler";
