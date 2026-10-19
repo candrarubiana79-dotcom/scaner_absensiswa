@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Scanner Presensi Terpadu - SMPN 1 RANCAH (v3.7)</title>
+  <title>Scanner Presensi Terpadu - SMPN 1 RANCAH (v3.8)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/html5-qrcode"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -28,7 +28,7 @@
     <div class="text-center py-2 px-3 bg-slate-800 rounded-xl border border-slate-700 shadow-md flex-shrink-0 z-10">
       <div class="flex items-center justify-center gap-2">
         <h1 class="text-base font-bold text-indigo-400"><i class="fa-solid fa-qrcode mr-1.5"></i>Scanner Terpadu</h1>
-        <span class="text-[10px] font-extrabold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full">v3.7 Unified</span>
+        <span class="text-[10px] font-extrabold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full">v3.8 Unified</span>
       </div>
       
       <!-- TOGGLE PILIHAN MODE SCAN -->
@@ -42,6 +42,17 @@
         <button id="btnModeDzuhur" onclick="setScanMode('dzuhur')" class="py-1.5 rounded-md transition text-slate-400">
           🕌 Dzuhur
         </button>
+      </div>
+
+      <!-- SAKLAR / TOGGLE MODE BERHALANGAN (HAID) UNTUK SHALAT DZUHUR -->
+      <div id="boxBerhalanganToggle" class="hidden mt-1.5 flex items-center justify-between bg-pink-950/60 px-3 py-1.5 rounded-lg border border-pink-500/40 text-[10px] shadow-sm">
+        <span class="text-pink-300 font-extrabold flex items-center gap-1.5">
+          🌸 Mode Siswi Berhalangan (Haid)
+        </span>
+        <label class="relative inline-flex items-center cursor-pointer">
+          <input type="checkbox" id="toggleBerhalangan" class="sr-only peer">
+          <div class="w-8 h-4 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-pink-600"></div>
+        </label>
       </div>
 
       <!-- STATUS DATA, OFFLINE QUEUE, & JUMLAH SCAN -->
@@ -130,7 +141,7 @@
   </div>
 
   <footer class="text-center text-[9px] text-slate-500 pt-1 flex-shrink-0">
-    Presensi Digital • SMPN 1 Rancah <span class="font-bold text-slate-400">v3.7 Unified</span>
+    Presensi Digital • SMPN 1 Rancah <span class="font-bold text-slate-400">v3.8 Unified</span>
   </footer>
 
   <script>
@@ -174,7 +185,6 @@
 
     function addStudentToScannedList(studentData) {
       let list = getScannedTodayList();
-      // Sisipkan di baris paling atas agar yang terbaru muncul paling awal
       list.unshift(studentData);
       saveScannedTodayList(list);
     }
@@ -196,10 +206,12 @@
       } else {
         let html = "";
         list.forEach((s, idx) => {
-          const isDzu = (s.tipe === "dzuhur");
-          const badgeMode = isDzu 
-            ? '<span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold text-[9px]">🕌 Dzuhur</span>'
-            : '<span class="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-bold text-[9px]">☀️ Reguler</span>';
+          let badgeMode = '<span class="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-bold text-[9px]">☀️ Reguler</span>';
+          if (s.tipe === "dzuhur_berhalangan") {
+            badgeMode = '<span class="px-1.5 py-0.5 rounded bg-pink-500/20 text-pink-300 border border-pink-500/30 font-bold text-[9px]">🌸 Berhalangan</span>';
+          } else if (s.tipe === "dzuhur") {
+            badgeMode = '<span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold text-[9px]">🕌 Dzuhur</span>';
+          }
 
           html += `
             <div class="p-2 bg-slate-700/60 rounded-xl border border-slate-600/60 flex items-center justify-between gap-2">
@@ -260,19 +272,34 @@
       document.getElementById("btnModeAuto").className = "py-1.5 rounded-md transition text-slate-400" + (mode === 'auto' ? ' active-mode' : '');
       document.getElementById("btnModeReguler").className = "py-1.5 rounded-md transition text-slate-400" + (mode === 'reguler' ? ' active-mode' : '');
       document.getElementById("btnModeDzuhur").className = "py-1.5 rounded-md transition text-slate-400" + (mode === 'dzuhur' ? ' active-mode-dzuhur' : '');
+      
+      updateBerhalanganToggleVisibility();
     }
 
     function getEffectiveMode() {
       if (activeScanMode !== "auto") return activeScanMode;
-      
       const now = new Date();
       const totalMin = now.getHours() * 60 + now.getMinutes();
 
-      // 690 menit = 11:30 WIB, 780 menit = 13:00 WIB
       if (totalMin >= 690 && totalMin <= 780) {
         return "dzuhur";
       }
       return "reguler";
+    }
+
+    function updateBerhalanganToggleVisibility() {
+      const effMode = getEffectiveMode();
+      const box = document.getElementById("boxBerhalanganToggle");
+      const toggle = document.getElementById("toggleBerhalangan");
+      
+      if (box) {
+        if (effMode === "dzuhur") {
+          box.classList.remove("hidden");
+        } else {
+          box.classList.add("hidden");
+          if (toggle) toggle.checked = false;
+        }
+      }
     }
 
     function getOfflineQueue() {
@@ -308,6 +335,7 @@
       
       updateOfflineUI();
       updateScannedUI();
+      updateBerhalanganToggleVisibility();
 
       fetch(WEB_APP_URL)
         .then(res => res.json())
@@ -384,6 +412,8 @@
 
       const currentMode = getEffectiveMode();
       const isDzuhurMode = (currentMode === "dzuhur");
+      const toggleBerhalangan = document.getElementById("toggleBerhalangan");
+      const isBerhalangan = isDzuhurMode && toggleBerhalangan && toggleBerhalangan.checked;
 
       playBeep(isDzuhurMode);
 
@@ -405,7 +435,7 @@
         nama: namaSiswa,
         kelas: kelasSiswa,
         jam: timestampJam,
-        tipe: isDzuhurMode ? "dzuhur" : "reguler"
+        tipe: isDzuhurMode ? (isBerhalangan ? "dzuhur_berhalangan" : "dzuhur") : "reguler"
       });
 
       const box = document.getElementById("statusBox");
@@ -414,7 +444,7 @@
       const elFoto = document.getElementById("statusFoto");
 
       elNama.textContent = namaSiswa;
-      elDetail.textContent = detailSiswa + (isDzuhurMode ? " • 🕌 Mencatat Dzuhur..." : " • ⚡ Mencatat Presensi...");
+      elDetail.textContent = detailSiswa + (isBerhalangan ? " • 🌸 Mencatat Berhalangan..." : (isDzuhurMode ? " • 🕌 Mencatat Dzuhur..." : " • ⚡ Mencatat Presensi..."));
       
       if (fotoUrl && isDzuhurMode) {
         elFoto.src = fotoUrl;
@@ -429,7 +459,10 @@
       setTimeout(() => { isProcessing = false; }, 500);
 
       const payload = { code: decodedText, token: TOKEN_GURU };
-      if (isDzuhurMode) payload.tipe = "dzuhur";
+      if (isDzuhurMode) {
+        payload.tipe = "dzuhur";
+        if (isBerhalangan) payload.status = "Berhalangan";
+      }
 
       fetch(WEB_APP_URL, {
         method: "POST",
@@ -438,12 +471,18 @@
       .then(res => res.json())
       .then(res => {
         if (res.status === "success") {
-          box.className = isDzuhurMode 
-            ? "absolute top-24 left-2 right-2 z-30 bg-emerald-950/95 backdrop-blur-md p-3 rounded-xl border-2 border-emerald-400 text-center shadow-2xl flex flex-col items-center"
-            : "absolute top-24 left-2 right-2 z-30 bg-emerald-900/95 backdrop-blur-md p-3 rounded-xl border border-emerald-500 text-center shadow-2xl flex flex-col items-center";
-          
-          elNama.textContent = (isDzuhurMode ? "🕌 " : "✅ ") + (siswaDitemukan ? siswaDitemukan.nama : res.message);
-          elDetail.textContent = detailSiswa + " • Waktu: " + (res.jam || timestampJam);
+          if (isBerhalangan) {
+            box.className = "absolute top-24 left-2 right-2 z-30 bg-pink-950/95 backdrop-blur-md p-3 rounded-xl border-2 border-pink-400 text-center shadow-2xl flex flex-col items-center";
+            elNama.textContent = "🌸 " + (siswaDitemukan ? siswaDitemukan.nama : res.message);
+            elDetail.textContent = detailSiswa + " • Status: Berhalangan (Haid) • " + (res.jam || timestampJam);
+          } else {
+            box.className = isDzuhurMode 
+              ? "absolute top-24 left-2 right-2 z-30 bg-emerald-950/95 backdrop-blur-md p-3 rounded-xl border-2 border-emerald-400 text-center shadow-2xl flex flex-col items-center"
+              : "absolute top-24 left-2 right-2 z-30 bg-emerald-900/95 backdrop-blur-md p-3 rounded-xl border border-emerald-500 text-center shadow-2xl flex flex-col items-center";
+            
+            elNama.textContent = (isDzuhurMode ? "🕌 " : "✅ ") + (siswaDitemukan ? siswaDitemukan.nama : res.message);
+            elDetail.textContent = detailSiswa + " • Waktu: " + (res.jam || timestampJam);
+          }
         } else {
           box.className = "absolute top-24 left-2 right-2 z-30 bg-amber-900/95 backdrop-blur-md p-3 rounded-xl border border-amber-500 text-center shadow-2xl flex flex-col items-center";
           elNama.textContent = "⚠️ " + namaSiswa;
@@ -456,13 +495,14 @@
           code: decodedText,
           token: TOKEN_GURU,
           tipe: isDzuhurMode ? "dzuhur" : "",
+          status: isBerhalangan ? "Berhalangan" : "",
           time: timestampJam,
           scanTime: new Date().toISOString()
         });
         saveOfflineQueue(queue);
 
         box.className = "absolute top-24 left-2 right-2 z-30 bg-amber-900/95 backdrop-blur-md p-3 rounded-xl border border-amber-500 text-center shadow-2xl flex flex-col items-center";
-        elNama.textContent = "📦 " + namaSiswa;
+        elNama.textContent = (isBerhalangan ? "🌸 " : "📦 ") + namaSiswa;
         elDetail.textContent = detailSiswa + " • Tersimpan Offline";
       })
       .finally(() => {
