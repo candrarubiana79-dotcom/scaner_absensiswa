@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Scanner Presensi Terpadu - SMPN 1 RANCAH (v3.9)</title>
+  <title>Scanner Presensi Terpadu - SMPN 1 RANCAH (v4.0)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/html5-qrcode"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -28,7 +28,7 @@
     <div class="text-center py-2 px-3 bg-slate-800 rounded-xl border border-slate-700 shadow-md flex-shrink-0 z-10">
       <div class="flex items-center justify-center gap-2">
         <h1 class="text-base font-bold text-indigo-400"><i class="fa-solid fa-qrcode mr-1.5"></i>Scanner Terpadu</h1>
-        <span class="text-[10px] font-extrabold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full">v3.9 Unified</span>
+        <span class="text-[10px] font-extrabold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full">v4.0 Unified</span>
       </div>
       
       <!-- TOGGLE PILIHAN MODE SCAN -->
@@ -44,7 +44,7 @@
         </button>
       </div>
 
-      <!-- SAKLAR / TOGGLE BERWARNA MODE BERHALANGAN (HAID) -->
+      <!-- SAKLAR MODE BERHALANGAN (HAID) -->
       <div id="boxBerhalanganToggle" class="hidden mt-1.5 flex items-center justify-between bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700 text-[10px] transition-all opacity-80">
         <span class="text-pink-300 font-extrabold flex items-center gap-1.5">
           🌸 Mode Berhalangan (Haid)
@@ -58,36 +58,47 @@
         </div>
       </div>
 
-      <!-- STATUS DATA, OFFLINE QUEUE, & JUMLAH SCAN -->
-      <div class="mt-1 flex flex-wrap justify-center items-center gap-1.5">
+      <!-- BADGE STATUS & LENCANA INTERAKTIF -->
+      <div class="mt-1.5 flex flex-wrap justify-center items-center gap-1.5">
         <span id="dataStatus" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
           <i class="fa-solid fa-spinner fa-spin"></i> Memuat...
         </span>
 
-        <!-- LENCANA JUMLAH TERSCAN (BISA DIKLIK) -->
-        <button onclick="openScannedModal()" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-500/40 transition cursor-pointer active:scale-95">
+        <!-- TOTAL TERSCAN -->
+        <button onclick="openScannedModal('all')" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-500/40 transition cursor-pointer active:scale-95">
           <i class="fa-solid fa-user-check text-emerald-400"></i> <span id="scannedCount">0</span> Terscan
         </button>
 
-        <span id="offlineBadge" class="hidden inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-slate-950 shadow-sm animate-pulse">
-          <i class="fa-solid fa-box-archive"></i> <span id="offlineCount">0</span> Offline
-        </span>
+        <!-- BELUM TERKIRIM (BISA DIKLIK) -->
+        <button id="pendingBadge" onclick="openScannedModal('pending')" class="hidden inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/40 transition cursor-pointer active:scale-95 animate-pulse">
+          <i class="fa-solid fa-hourglass-half text-amber-400"></i> <span id="pendingCount">0</span> Belum Terkirim
+        </button>
+
+        <!-- OFFLINE QUEUE (BISA DIKLIK) -->
+        <button id="offlineBadge" onclick="openOfflineModal()" class="hidden inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:bg-rose-500/40 transition cursor-pointer active:scale-95">
+          <i class="fa-solid fa-box-archive text-rose-400"></i> <span id="offlineCount">0</span> Offline
+        </button>
       </div>
 
-      <!-- PROGRESS BAR SINKRONISASI -->
-      <div id="progressContainer" class="hidden mt-1 pt-1 border-t border-slate-700/50">
+      <!-- PROGRESS BAR SINKRONISASI & NOTIFIKASI TUNTAS -->
+      <div id="progressContainer" class="hidden mt-1.5 pt-1.5 border-t border-slate-700/50">
         <div class="flex justify-between items-center text-[9px] text-amber-400 font-semibold mb-0.5 px-1">
-          <span id="progressText"><i class="fa-solid fa-cloud-arrow-up mr-1"></i> Mengirim antrean...</span>
+          <span id="progressText"><i class="fa-solid fa-cloud-arrow-up mr-1 animate-bounce"></i> Mengirim data...</span>
           <span id="progressPercent">0%</span>
         </div>
         <div class="w-full bg-slate-700 h-1.5 rounded-full overflow-hidden">
           <div id="progressBar" class="bg-amber-400 h-full w-0 transition-all duration-300 ease-out rounded-full"></div>
         </div>
+
+        <!-- NOTIFIKASI SEMUA DATA TERKIRIM -->
+        <div id="allSentNotice" class="hidden mt-1.5 text-[9px] font-extrabold text-emerald-400 text-center animate-pulse flex items-center justify-center gap-1 bg-emerald-950/80 border border-emerald-500/30 py-1 px-2 rounded-lg">
+          <i class="fa-solid fa-circle-check text-emerald-400"></i> SEMUA DATA SCANNER TERKIRIM KE SERVER
+        </div>
       </div>
     </div>
 
-    <!-- 2. POPUP HASIL SCAN (FLOATING OVERLAY) -->
-    <div id="statusBox" class="absolute top-24 left-2 right-2 z-30 bg-slate-800/95 backdrop-blur-md p-3 rounded-xl border border-indigo-500 hidden text-center shadow-2xl flex flex-col items-center transition-all duration-200">
+    <!-- 2. POPUP INSTAN HASIL SCAN ("TERCATAT") -->
+    <div id="statusBox" class="absolute top-24 left-2 right-2 z-30 bg-slate-800/95 backdrop-blur-md p-3 rounded-xl border border-indigo-500 hidden text-center shadow-2xl flex flex-col items-center transition-all duration-150">
       <img id="statusFoto" src="https://via.placeholder.com/100?text=Foto" class="w-16 h-20 object-cover rounded-lg border-2 border-indigo-400 mb-1.5 shadow-md hidden">
       <h2 id="statusNama" class="text-sm font-bold"></h2>
       <p id="statusDetail" class="text-xs text-slate-300 mt-0.5"></p>
@@ -115,15 +126,15 @@
 
   </div>
 
-  <!-- JENDELA MODAL DAFTAR SISWA TERSCAN -->
+  <!-- MODAL DAFTAR SISWA TERSCAN / BELUM TERKIRIM -->
   <div id="modalScanned" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md max-h-[80vh] flex flex-col p-4 shadow-2xl">
       <div class="flex justify-between items-center pb-2.5 border-b border-slate-700 mb-2.5">
         <div>
-          <h3 class="text-sm font-bold text-indigo-400 flex items-center gap-1.5">
+          <h3 id="modalScannedTitle" class="text-sm font-bold text-indigo-400 flex items-center gap-1.5">
             <i class="fa-solid fa-list-check"></i> Siswa Terscan Hari Ini
           </h3>
-          <p class="text-[10px] text-slate-400">Daftar siswa yang sudah tercatat di sistem HP ini</p>
+          <p id="modalScannedSub" class="text-[10px] text-slate-400">Daftar siswa yang sudah tercatat di sistem HP ini</p>
         </div>
         <button onclick="closeScannedModal()" class="w-7 h-7 bg-slate-700 hover:bg-slate-600 rounded-full flex items-center justify-center text-slate-300 hover:text-white transition">
           <i class="fa-solid fa-xmark text-sm"></i>
@@ -131,7 +142,7 @@
       </div>
 
       <div id="modalScannedList" class="overflow-y-auto flex-1 space-y-1.5 pr-1 text-xs">
-        <!-- JS Daftar Generator -->
+        <!-- JS List Generator -->
       </div>
 
       <div class="pt-2.5 mt-2 border-t border-slate-700/80 flex justify-between items-center text-[10px] text-slate-400">
@@ -143,8 +154,36 @@
     </div>
   </div>
 
+  <!-- MODAL KHUSUS ANTREAN OFFLINE -->
+  <div id="modalOffline" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md max-h-[80vh] flex flex-col p-4 shadow-2xl">
+      <div class="flex justify-between items-center pb-2.5 border-b border-slate-700 mb-2.5">
+        <div>
+          <h3 class="text-sm font-bold text-amber-400 flex items-center gap-1.5">
+            <i class="fa-solid fa-box-archive"></i> Antrean Offline HP
+          </h3>
+          <p class="text-[10px] text-slate-400">Data tersimpan di HP dan belum terunggah ke server</p>
+        </div>
+        <button onclick="closeOfflineModal()" class="w-7 h-7 bg-slate-700 hover:bg-slate-600 rounded-full flex items-center justify-center text-slate-300 hover:text-white transition">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <div id="modalOfflineList" class="overflow-y-auto flex-1 space-y-1.5 pr-1 text-xs">
+        <!-- JS List Generator -->
+      </div>
+
+      <div class="pt-2.5 mt-2 border-t border-slate-700/80 flex justify-between items-center text-[10px] text-slate-400">
+        <span>Antrean: <b id="modalOfflineTotal" class="text-amber-400 font-extrabold">0</b> Data</span>
+        <button onclick="syncOfflineData()" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold flex items-center gap-1">
+          <i class="fa-solid fa-rotate"></i> Kirim Sekarang
+        </button>
+      </div>
+    </div>
+  </div>
+
   <footer class="text-center text-[9px] text-slate-500 pt-1 flex-shrink-0">
-    Presensi Digital • SMPN 1 Rancah <span class="font-bold text-slate-400">v3.9 Unified</span>
+    Presensi Digital • SMPN 1 Rancah <span class="font-bold text-slate-400">v4.0 Unified</span>
   </footer>
 
   <script>
@@ -163,6 +202,7 @@
     let autoHideTimer = null;
     let isSyncing = false;
     let totalOfflineSync = 0;
+    let currentModalFilter = "all";
 
     function getTodayKey() {
       const d = new Date();
@@ -184,6 +224,17 @@
       const list = getScannedTodayList();
       const elCount = document.getElementById("scannedCount");
       if (elCount) elCount.textContent = list.length;
+
+      const pendingList = list.filter(s => s.statusKirim === "pending");
+      const pendingBadge = document.getElementById("pendingBadge");
+      const pendingCount = document.getElementById("pendingCount");
+
+      if (pendingList.length > 0) {
+        if (pendingBadge) pendingBadge.classList.remove("hidden");
+        if (pendingCount) pendingCount.textContent = pendingList.length;
+      } else {
+        if (pendingBadge) pendingBadge.classList.add("hidden");
+      }
     }
 
     function addStudentToScannedList(studentData) {
@@ -192,11 +243,32 @@
       saveScannedTodayList(list);
     }
 
-    function openScannedModal() {
+    function updateStudentSendStatus(scanId, status) {
+      let list = getScannedTodayList();
+      let item = list.find(s => s.id === scanId);
+      if (item) {
+        item.statusKirim = status;
+        saveScannedTodayList(list);
+      }
+    }
+
+    function openScannedModal(filter = 'all') {
+      currentModalFilter = filter;
       const modal = document.getElementById("modalScanned");
       const listContainer = document.getElementById("modalScannedList");
       const totalEl = document.getElementById("modalScannedTotal");
-      const list = getScannedTodayList();
+      const titleEl = document.getElementById("modalScannedTitle");
+      const subEl = document.getElementById("modalScannedSub");
+      
+      let list = getScannedTodayList();
+      if (filter === 'pending') {
+        list = list.filter(s => s.statusKirim === "pending");
+        titleEl.innerHTML = `<i class="fa-solid fa-hourglass-half text-amber-400"></i> Siswa Belum Terkirim`;
+        subEl.textContent = "Daftar siswa yang datanya masih tertahan di HP";
+      } else {
+        titleEl.innerHTML = `<i class="fa-solid fa-list-check"></i> Siswa Terscan Hari Ini`;
+        subEl.textContent = "Daftar seluruh siswa yang sudah tercatat hari ini";
+      }
 
       totalEl.textContent = list.length;
 
@@ -204,7 +276,7 @@
         listContainer.innerHTML = `
           <div class="text-center py-8 text-slate-500 italic">
             <i class="fa-solid fa-folder-open text-2xl mb-1 text-slate-600 block"></i>
-            Belum ada siswa yang di-scan hari ini.
+            ${filter === 'pending' ? 'Semua data presensi sudah terkirim ke server!' : 'Belum ada siswa yang di-scan hari ini.'}
           </div>`;
       } else {
         let html = "";
@@ -215,6 +287,10 @@
           } else if (s.tipe === "dzuhur") {
             badgeMode = '<span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold text-[9px]">🕌 Dzuhur</span>';
           }
+
+          let badgeSend = s.statusKirim === "terkirim"
+            ? '<span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold text-[9px]"><i class="fa-solid fa-check"></i> Terkirim</span>'
+            : '<span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold text-[9px] animate-pulse"><i class="fa-solid fa-clock"></i> Belum Terkirim</span>';
 
           html += `
             <div class="p-2 bg-slate-700/60 rounded-xl border border-slate-600/60 flex items-center justify-between gap-2">
@@ -227,8 +303,8 @@
                   <p class="text-[10px] text-slate-400">Kelas ${s.kelas} • NISN: ${s.nisn}</p>
                 </div>
               </div>
-              <div class="text-right flex-shrink-0">
-                ${badgeMode}
+              <div class="text-right flex-shrink-0 flex flex-col items-end gap-0.5">
+                <div class="flex items-center gap-1">${badgeMode} ${badgeSend}</div>
                 <div class="text-[9px] text-slate-400 font-mono mt-0.5">${s.jam}</div>
               </div>
             </div>`;
@@ -243,10 +319,52 @@
       document.getElementById("modalScanned").classList.add("hidden");
     }
 
+    function openOfflineModal() {
+      const modal = document.getElementById("modalOffline");
+      const listContainer = document.getElementById("modalOfflineList");
+      const totalEl = document.getElementById("modalOfflineTotal");
+      const queue = getOfflineQueue();
+
+      totalEl.textContent = queue.length;
+
+      if (queue.length === 0) {
+        listContainer.innerHTML = `
+          <div class="text-center py-8 text-slate-500 italic">
+            <i class="fa-solid fa-circle-check text-2xl mb-1 text-emerald-500 block"></i>
+            Tidak ada antrean offline. Semua terkirim!
+          </div>`;
+      } else {
+        let html = "";
+        queue.forEach((item, idx) => {
+          const siswaDitemukan = masterSiswaLokal.find(s => String(s.nisn).trim().toLowerCase() === String(item.code).trim().toLowerCase());
+          const nama = siswaDitemukan ? siswaDitemukan.nama : "QR: " + item.code;
+          const kelas = siswaDitemukan ? ("Kelas " + siswaDitemukan.kelas) : "Unknown";
+
+          html += `
+            <div class="p-2 bg-slate-700/60 rounded-xl border border-slate-600/60 flex items-center justify-between gap-2">
+              <div class="min-w-0">
+                <h4 class="font-bold text-amber-300 truncate">${nama}</h4>
+                <p class="text-[10px] text-slate-400">${kelas} • ${item.status || (item.tipe === "dzuhur" ? "Dzuhur" : "Reguler")}</p>
+              </div>
+              <div class="text-right font-mono text-[10px] text-slate-300 flex-shrink-0">
+                ${item.time || "-"}
+              </div>
+            </div>`;
+        });
+        listContainer.innerHTML = html;
+      }
+
+      modal.classList.remove("hidden");
+    }
+
+    function closeOfflineModal() {
+      document.getElementById("modalOffline").classList.add("hidden");
+    }
+
     function clearScannedList() {
       if (confirm("Apakah Anda yakin ingin meriset daftar terscan lokal hari ini?")) {
         saveScannedTodayList([]);
-        openScannedModal();
+        openScannedModal(currentModalFilter);
       }
     }
 
@@ -349,7 +467,7 @@
       const inputUsb = document.getElementById("inputUsbScanner");
 
       document.body.addEventListener("click", (e) => {
-        if (!e.target.closest('button, input, select, a, #modalScanned')) {
+        if (!e.target.closest('button, input, select, a, #modalScanned, #modalOffline')) {
           if(inputUsb) inputUsb.focus();
         }
       });
@@ -419,6 +537,7 @@
       }
     }
 
+    // --- PEMROSES UTAMA (INSTANT POP-UP & QUEUE SYNC) ---
     function prosesScanUnified(decodedText) {
       const now = Date.now();
       const targetCode = String(decodedText).trim().toLowerCase();
@@ -449,24 +568,51 @@
       const fotoUrl = (siswaDitemukan && siswaDitemukan.foto) ? siswaDitemukan.foto : "";
 
       const timestampJam = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+      const scanId = Date.now() + "_" + Math.random().toString(36).substring(2, 6);
 
-      // Catat ke memori terscan lokal
+      // 1. Simpan Lokal dengan Status Pending
       addStudentToScannedList({
+        id: scanId,
         nisn: nisnSiswa,
         nama: namaSiswa,
         kelas: kelasSiswa,
         jam: timestampJam,
-        tipe: isDzuhurMode ? (isBerhalangan ? "dzuhur_berhalangan" : "dzuhur") : "reguler"
+        tipe: isDzuhurMode ? (isBerhalangan ? "dzuhur_berhalangan" : "dzuhur") : "reguler",
+        statusKirim: "pending"
       });
 
+      // 2. Tambah ke Queue Pengiriman
+      const queue = getOfflineQueue();
+      queue.push({
+        scanId: scanId,
+        code: decodedText,
+        token: TOKEN_GURU,
+        tipe: isDzuhurMode ? "dzuhur" : "",
+        status: isBerhalangan ? "Berhalangan" : "",
+        time: timestampJam,
+        scanTime: new Date().toISOString()
+      });
+      saveOfflineQueue(queue);
+
+      // 3. Tampilkan Pop-up Instan "Tercatat" (1.5 Detik)
       const box = document.getElementById("statusBox");
       const elNama = document.getElementById("statusNama");
       const elDetail = document.getElementById("statusDetail");
       const elFoto = document.getElementById("statusFoto");
 
-      elNama.textContent = namaSiswa;
-      elDetail.textContent = detailSiswa + (isBerhalangan ? " • 🌸 Mencatat Berhalangan..." : (isDzuhurMode ? " • 🕌 Mencatat Dzuhur..." : " • ⚡ Mencatat Presensi..."));
-      
+      if (isBerhalangan) {
+        box.className = "absolute top-24 left-2 right-2 z-30 bg-pink-950/95 backdrop-blur-md p-3 rounded-xl border-2 border-pink-400 text-center shadow-2xl flex flex-col items-center transition-all duration-150";
+        elNama.textContent = "🌸 Tercatat (Berhalangan)";
+        elDetail.textContent = namaSiswa + " • " + detailSiswa + " • " + timestampJam;
+      } else {
+        box.className = isDzuhurMode 
+          ? "absolute top-24 left-2 right-2 z-30 bg-emerald-950/95 backdrop-blur-md p-3 rounded-xl border-2 border-emerald-400 text-center shadow-2xl flex flex-col items-center transition-all duration-150"
+          : "absolute top-24 left-2 right-2 z-30 bg-emerald-900/95 backdrop-blur-md p-3 rounded-xl border border-emerald-500 text-center shadow-2xl flex flex-col items-center transition-all duration-150";
+        
+        elNama.textContent = (isDzuhurMode ? "🕌 Tercatat (Dzuhur)" : "✅ Tercatat");
+        elDetail.textContent = namaSiswa + " • " + detailSiswa + " • " + timestampJam;
+      }
+
       if (fotoUrl && isDzuhurMode) {
         elFoto.src = fotoUrl;
         elFoto.classList.remove("hidden");
@@ -474,68 +620,23 @@
         elFoto.classList.add("hidden");
       }
 
-      box.className = "absolute top-24 left-2 right-2 z-30 bg-slate-800/95 backdrop-blur-md p-3 rounded-xl border border-indigo-500 text-center shadow-2xl flex flex-col items-center transition-all duration-150";
       box.classList.remove("hidden");
 
-      setTimeout(() => { isProcessing = false; }, 500);
+      setTimeout(() => { isProcessing = false; }, 400);
+      autoHideTimer = setTimeout(() => { box.classList.add("hidden"); }, 1500);
 
-      const payload = { code: decodedText, token: TOKEN_GURU };
-      if (isDzuhurMode) {
-        payload.tipe = "dzuhur";
-        if (isBerhalangan) payload.status = "Berhalangan";
-      }
-
-      fetch(WEB_APP_URL, {
-        method: "POST",
-        body: JSON.stringify(payload)
-      })
-      .then(res => res.json())
-      .then(res => {
-        if (res.status === "success") {
-          if (isBerhalangan) {
-            box.className = "absolute top-24 left-2 right-2 z-30 bg-pink-950/95 backdrop-blur-md p-3 rounded-xl border-2 border-pink-400 text-center shadow-2xl flex flex-col items-center";
-            elNama.textContent = "🌸 " + (siswaDitemukan ? siswaDitemukan.nama : res.message);
-            elDetail.textContent = detailSiswa + " • Status: Berhalangan (Haid) • " + (res.jam || timestampJam);
-          } else {
-            box.className = isDzuhurMode 
-              ? "absolute top-24 left-2 right-2 z-30 bg-emerald-950/95 backdrop-blur-md p-3 rounded-xl border-2 border-emerald-400 text-center shadow-2xl flex flex-col items-center"
-              : "absolute top-24 left-2 right-2 z-30 bg-emerald-900/95 backdrop-blur-md p-3 rounded-xl border border-emerald-500 text-center shadow-2xl flex flex-col items-center";
-            
-            elNama.textContent = (isDzuhurMode ? "🕌 " : "✅ ") + (siswaDitemukan ? siswaDitemukan.nama : res.message);
-            elDetail.textContent = detailSiswa + " • Waktu: " + (res.jam || timestampJam);
-          }
-        } else {
-          box.className = "absolute top-24 left-2 right-2 z-30 bg-amber-900/95 backdrop-blur-md p-3 rounded-xl border border-amber-500 text-center shadow-2xl flex flex-col items-center";
-          elNama.textContent = "⚠️ " + namaSiswa;
-          elDetail.textContent = res.message || "Data ditolak server.";
-        }
-      })
-      .catch(err => {
-        const queue = getOfflineQueue();
-        queue.push({
-          code: decodedText,
-          token: TOKEN_GURU,
-          tipe: isDzuhurMode ? "dzuhur" : "",
-          status: isBerhalangan ? "Berhalangan" : "",
-          time: timestampJam,
-          scanTime: new Date().toISOString()
-        });
-        saveOfflineQueue(queue);
-
-        box.className = "absolute top-24 left-2 right-2 z-30 bg-amber-900/95 backdrop-blur-md p-3 rounded-xl border border-amber-500 text-center shadow-2xl flex flex-col items-center";
-        elNama.textContent = (isBerhalangan ? "🌸 " : "📦 ") + namaSiswa;
-        elDetail.textContent = detailSiswa + " • Tersimpan Offline";
-      })
-      .finally(() => {
-        autoHideTimer = setTimeout(() => { box.classList.add("hidden"); }, 3000);
-        syncOfflineData();
-      });
+      // 4. Picu Pengiriman di Latar Belakang
+      syncOfflineData();
     }
 
+    // --- SINKRONISASI PENGIRIMAN & PROGRESS BAR ---
     function syncOfflineData() {
       if (isSyncing) return;
       const currentQueue = getOfflineQueue();
       if (currentQueue.length === 0) return;
+
+      const notice = document.getElementById("allSentNotice");
+      if (notice) notice.classList.add("hidden");
 
       if (totalOfflineSync === 0 || totalOfflineSync < currentQueue.length) {
         totalOfflineSync = currentQueue.length;
@@ -558,13 +659,19 @@
       .then(res => {
         if (res.status === "success") {
           let freshQueue = getOfflineQueue();
+
+          // Tandai item yang sukses terkirim di memori terscan harian
+          chunkToSync.forEach(item => {
+            if (item.scanId) updateStudentSendStatus(item.scanId, "terkirim");
+          });
+
           freshQueue.splice(0, chunkToSync.length);
           saveOfflineQueue(freshQueue);
           updateProgressBar(freshQueue.length, totalOfflineSync);
         }
         isSyncing = false;
         if (getOfflineQueue().length > 0) {
-          setTimeout(syncOfflineData, 300);
+          setTimeout(syncOfflineData, 200);
         } else {
           completeProgressBar();
         }
@@ -586,7 +693,7 @@
 
       pBar.style.width = percent + "%";
       if (pPercent) pPercent.textContent = percent + "%";
-      if (pText) pText.innerHTML = `<i class="fa-solid fa-cloud-arrow-up mr-1 animate-bounce"></i> Syncing (${completed}/${totalCount})...`;
+      if (pText) pText.innerHTML = `<i class="fa-solid fa-cloud-arrow-up mr-1 animate-bounce"></i> Mengirim (${completed}/${totalCount})...`;
     }
 
     function completeProgressBar() {
@@ -594,18 +701,23 @@
       const pText = document.getElementById("progressText");
       const pBar = document.getElementById("progressBar");
       const pPercent = document.getElementById("progressPercent");
+      const notice = document.getElementById("allSentNotice");
 
       if (!pBar) return;
       pBar.style.width = "100%";
       if (pPercent) pPercent.textContent = "100%";
-      if (pText) pText.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400 mr-1"></i> Data Terkirim`;
+      if (pText) pText.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400 mr-1"></i> Selesai`;
+
+      // Tampilkan Notifikasi Tuntas di bawah Bar Status
+      if (notice) notice.classList.remove("hidden");
 
       setTimeout(() => {
         if (getOfflineQueue().length === 0) {
           if (container) container.classList.add("hidden");
+          if (notice) notice.classList.add("hidden");
           totalOfflineSync = 0;
         }
-      }, 3000);
+      }, 4000);
     }
   </script>
 </body>
