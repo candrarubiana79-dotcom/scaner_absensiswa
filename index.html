@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Scanner Presensi Terpadu - SMPN 1 RANCAH (v4.0)</title>
+  <title>Scanner Presensi Terpadu - SMPN 1 RANCAH (v4.1)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/html5-qrcode"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -42,7 +42,7 @@
     <div class="text-center py-2 px-3 bg-slate-800 rounded-xl border border-slate-700 shadow-md flex-shrink-0 z-10">
       <div class="flex items-center justify-center gap-2">
         <h1 class="text-base font-bold text-indigo-400"><i class="fa-solid fa-qrcode mr-1.5"></i>Scanner Terpadu</h1>
-        <span class="text-[10px] font-extrabold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full">v4.0 Unified</span>
+        <span class="text-[10px] font-extrabold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full">v4.1 Unified</span>
       </div>
       
       <!-- TOGGLE PILIHAN MODE SCAN -->
@@ -72,7 +72,7 @@
         </div>
       </div>
 
-      <!-- BADGE STATUS & LENCANA INTERAKTIF -->
+      <!-- BADGE STATUS & LENCANA INTERAKTIF (LANGSUNG TAMPIL) -->
       <div class="mt-1.5 flex flex-wrap justify-center items-center gap-1.5">
         <span id="dataStatus" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
           <i class="fa-solid fa-spinner fa-spin"></i> Memuat...
@@ -83,21 +83,21 @@
           <i class="fa-solid fa-user-check text-emerald-400"></i> <span id="scannedCount">0</span> Terscan
         </button>
 
-        <!-- BELUM TERKIRIM (BISA DIKLIK) -->
-        <button id="pendingBadge" onclick="openScannedModal('pending')" class="hidden inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/40 transition cursor-pointer active:scale-95 animate-pulse">
+        <!-- BELUM TERKIRIM (LANGSUNG TAMPIL & BISA DIKLIK) -->
+        <button id="pendingBadge" onclick="openScannedModal('pending')" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/40 transition cursor-pointer active:scale-95">
           <i class="fa-solid fa-hourglass-half text-amber-400"></i> <span id="pendingCount">0</span> Belum Terkirim
         </button>
 
-        <!-- OFFLINE QUEUE (BISA DIKLIK) -->
-        <button id="offlineBadge" onclick="openOfflineModal()" class="hidden inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:bg-rose-500/40 transition cursor-pointer active:scale-95">
+        <!-- OFFLINE QUEUE (LANGSUNG TAMPIL & BISA DIKLIK) -->
+        <button id="offlineBadge" onclick="openOfflineModal()" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:bg-rose-500/40 transition cursor-pointer active:scale-95">
           <i class="fa-solid fa-box-archive text-rose-400"></i> <span id="offlineCount">0</span> Offline
         </button>
       </div>
 
-      <!-- PROGRESS BAR SINKRONISASI & NOTIFIKASI TUNTAS -->
-      <div id="progressContainer" class="hidden mt-1.5 pt-1.5 border-t border-slate-700/50">
-        <div class="flex justify-between items-center text-[9px] text-amber-400 font-semibold mb-0.5 px-1">
-          <span id="progressText"><i class="fa-solid fa-cloud-arrow-up mr-1 animate-bounce"></i> Mengirim data...</span>
+      <!-- PROGRESS BAR SINKRONISASI & NOTIFIKASI TUNTAS (LANGSUNG TAMPIL) -->
+      <div id="progressContainer" class="mt-1.5 pt-1.5 border-t border-slate-700/50">
+        <div id="progressHeaderRow" class="flex justify-between items-center text-[9px] text-slate-400 font-semibold mb-0.5 px-1">
+          <span id="progressText"><i class="fa-solid fa-cloud text-slate-400 mr-1"></i> Siap mengirim data</span>
           <span id="progressPercent">0%</span>
         </div>
         <div class="w-full bg-slate-700 h-1.5 rounded-full overflow-hidden">
@@ -197,7 +197,7 @@
   </div>
 
   <footer class="text-center text-[9px] text-slate-500 pt-1 flex-shrink-0">
-    UCANXXX Digital Studio • SMPN 1 Rancah <span class="font-bold text-slate-400">v4.0 Unified</span>
+    UCANXXX Digital Studio • SMPN 1 Rancah <span class="font-bold text-slate-400">v4.1 Unified</span>
   </footer>
 
   <script>
@@ -243,11 +243,13 @@
       const pendingBadge = document.getElementById("pendingBadge");
       const pendingCount = document.getElementById("pendingCount");
 
-      if (pendingList.length > 0) {
-        if (pendingBadge) pendingBadge.classList.remove("hidden");
-        if (pendingCount) pendingCount.textContent = pendingList.length;
-      } else {
-        if (pendingBadge) pendingBadge.classList.add("hidden");
+      if (pendingCount) pendingCount.textContent = pendingList.length;
+      if (pendingBadge) {
+        if (pendingList.length > 0) {
+          pendingBadge.classList.add("animate-pulse", "border-amber-400");
+        } else {
+          pendingBadge.classList.remove("animate-pulse", "border-amber-400");
+        }
       }
     }
 
@@ -468,11 +470,13 @@
       const queue = getOfflineQueue();
       const badge = document.getElementById("offlineBadge");
       const countEl = document.getElementById("offlineCount");
-      if (queue.length > 0) {
-        badge.classList.remove("hidden");
-        countEl.textContent = queue.length;
-      } else {
-        badge.classList.add("hidden");
+      if (countEl) countEl.textContent = queue.length;
+      if (badge) {
+        if (queue.length > 0) {
+          badge.classList.add("animate-pulse", "border-rose-400");
+        } else {
+          badge.classList.remove("animate-pulse", "border-rose-400");
+        }
       }
     }
 
@@ -701,13 +705,13 @@
     }
 
     function updateProgressBar(remainingCount, totalCount) {
-      const container = document.getElementById("progressContainer");
+      const headerRow = document.getElementById("progressHeaderRow");
       const pText = document.getElementById("progressText");
       const pBar = document.getElementById("progressBar");
       const pPercent = document.getElementById("progressPercent");
 
-      if (!container || !pBar) return;
-      container.classList.remove("hidden");
+      if (!pBar) return;
+      if (headerRow) headerRow.className = "flex justify-between items-center text-[9px] text-amber-400 font-semibold mb-0.5 px-1";
       
       const completed = totalCount - remainingCount;
       const percent = totalCount > 0 ? Math.round((completed / totalCount) * 100) : 100;
@@ -718,13 +722,14 @@
     }
 
     function completeProgressBar() {
-      const container = document.getElementById("progressContainer");
+      const headerRow = document.getElementById("progressHeaderRow");
       const pText = document.getElementById("progressText");
       const pBar = document.getElementById("progressBar");
       const pPercent = document.getElementById("progressPercent");
       const notice = document.getElementById("allSentNotice");
 
       if (!pBar) return;
+      if (headerRow) headerRow.className = "flex justify-between items-center text-[9px] text-emerald-400 font-semibold mb-0.5 px-1";
       pBar.style.width = "100%";
       if (pPercent) pPercent.textContent = "100%";
       if (pText) pText.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400 mr-1"></i> Selesai`;
@@ -734,7 +739,10 @@
 
       setTimeout(() => {
         if (getOfflineQueue().length === 0) {
-          if (container) container.classList.add("hidden");
+          if (headerRow) headerRow.className = "flex justify-between items-center text-[9px] text-slate-400 font-semibold mb-0.5 px-1";
+          pBar.style.width = "0%";
+          if (pPercent) pPercent.textContent = "0%";
+          if (pText) pText.innerHTML = `<i class="fa-solid fa-cloud text-slate-400 mr-1"></i> Siap mengirim data`;
           if (notice) notice.classList.add("hidden");
           totalOfflineSync = 0;
         }
