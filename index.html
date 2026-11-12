@@ -18,6 +18,20 @@
       color: #ffffff !important;
       box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
+    /* Mencegah area video & kotak scan menyusut/mengecil */
+    #reader {
+      position: relative !important;
+    }
+    #reader > div {
+      width: 100% !important;
+      height: 100% !important;
+    }
+    #reader video {
+      object-fit: cover !important;
+      width: 100% !important;
+      height: 100% !important;
+      border-radius: 0.5rem;
+    }
   </style>
 </head>
 <body class="bg-slate-900 text-white h-[100dvh] overflow-hidden flex flex-col justify-between p-2.5 font-sans relative">
@@ -520,7 +534,14 @@
 
       html5QrCode.start(
         { facingMode: "environment" },
-        { fps: 15, qrbox: { width: 180, height: 180 } },
+        { 
+          fps: 15, 
+          qrbox: (viewfinderWidth, viewfinderHeight) => {
+            const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+            const size = Math.max(150, Math.floor(minEdge * 0.75));
+            return { width: size, height: size };
+          }
+        },
         (decodedText) => prosesScanUnified(decodedText)
       ).then(() => {
         document.getElementById("btnStart").classList.add("hidden");
